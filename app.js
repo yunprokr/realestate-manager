@@ -526,17 +526,24 @@ function focusProperty(id) {
   var p = allProperties.find(x => x.매물ID === id);
   if (!p) return;
 
-  // 지도 이동: 개별 마커의 오프셋된 좌표 우선 사용
-  var m = individualMarkers.find(x => x._propertyId === id);
-  if (m && m._lat && m._lng) {
-    var pos = new kakao.maps.LatLng(m._lat, m._lng);
-    map.setLevel(5, { anchor: pos });
-    map.panTo(pos);
-  } else if (p.lat && p.lng) {
-    // 클러스터 모드에서 선택한 경우: 원래 좌표
-    var pos2 = new kakao.maps.LatLng(p.lat, p.lng);
-    map.setLevel(5, { anchor: pos2 });
-    map.panTo(pos2);
+  // 상세 표시 (relayout은 여기서 처리됨)
+  var isMobile = window.innerWidth <= 1023;
+  if (isMobile) showBottomSheet(p);
+  else showDetailPanel(p);
+
+  // 지도 이동 (relayout 후)
+  if (p.lat && p.lng) {
+    // 개별 마커의 오프셋 좌표 우선
+    var m = individualMarkers.find(x => x._propertyId === id);
+    var lat = (m && m._lat) ? m._lat : p.lat;
+    var lng = (m && m._lng) ? m._lng : p.lng;
+
+    setTimeout(function() {
+      if (!map) return;
+      var pos = new kakao.maps.LatLng(lat, lng);
+      map.setLevel(5, { anchor: pos });
+      map.panTo(pos);
+    }, 230);  // relayout(220ms) 이후
   }
 
   // 선택 하이라이트
@@ -544,38 +551,60 @@ function focusProperty(id) {
     var el = mk._overlay && mk._overlay.getContent ? mk._overlay.getContent() : null;
     if (el && el.classList) el.classList.remove('active');
   });
-  if (m && m._overlay) {
-    var el2 = m._overlay.getContent ? m._overlay.getContent() : null;
+  var m2 = individualMarkers.find(x => x._propertyId === id);
+  if (m2 && m2._overlay) {
+    var el2 = m2._overlay.getContent ? m2._overlay.getContent() : null;
     if (el2 && el2.classList) el2.classList.add('active');
   }
-
-  // 상세 표시
-  var isMobile = window.innerWidth <= 1023;
-  if (isMobile) showBottomSheet(p);
-  else showDetailPanel(p);
 
   if (window.innerWidth <= 768) {
     document.getElementById('listContainer').scrollTop = 0;
   }
 }
 
+
 function showDetailPanel(p) {
   var panel = document.getElementById('detailPanel');
+  var wasHidden = panel.classList.contains('hidden');
+
   document.getElementById('detailContent').innerHTML = buildDetailHTML(p);
   panel.classList.remove('hidden');
+
+  // 패널이 새로 열릴 때만 relayout
+  if (wasHidden) {
+    setTimeout(function() {
+      if (map) map.relayout();
+    }, 220);
+  }
 }
+
 function showBottomSheet(p) {
   var bs = document.getElementById('bottomSheet');
+  var wasHidden = bs.classList.contains('hidden');
+
   document.getElementById('bottomSheetContent').innerHTML = buildDetailHTML(p);
   bs.classList.remove('hidden');
+
+  if (wasHidden) {
+    setTimeout(function() {
+      if (map) map.relayout();
+    }, 220);
+  }
 }
+
 
 function bindDetailClose() {
   document.getElementById('detailClosePC').addEventListener('click', () => {
     document.getElementById('detailPanel').classList.add('hidden');
+    setTimeout(function() {
+      if (map) map.relayout();
+    }, 220);
   });
   document.getElementById('detailCloseMobile').addEventListener('click', () => {
     document.getElementById('bottomSheet').classList.add('hidden');
+    setTimeout(function() {
+      if (map) map.relayout();
+    }, 220);
   });
 }
 
