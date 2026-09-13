@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>부동산 매물관리</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== 로그인 화면 ===== -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-box">
+    <h1>🏢 부동산 매물관리</h1>
+    <p>등록된 이메일로 접속하세요</p>
+    <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email">
+    <button id="authBtn">접속</button>
+    <div id="authMsg" class="auth-msg"></div>
+  </div>
+</div>
+
+<!-- ===== 메인 앱 ===== -->
+<div id="app" class="hidden">
+  <div id="loading">
+    <div class="spinner"></div>
+    <div id="loadingMsg">데이터 로드 중...</div>
+  </div>
+
+  <div id="topbar">
+    <div class="brand">🏢 매물관리 <span id="totalBadge" class="badge">0</span></div>
+    <div class="tabs">
+      <button class="tab active" data-tab="property">매물</button>
+      <button class="tab" data-tab="customer">고객</button>
+    </div>
+    <button id="logoutBtn" class="logout">로그아웃</button>
+  </div>
+
+  <div id="layout">
+    <aside id="sidebar">
+      <div id="filterProperty" class="filter-panel">
+        <div class="filter-row">
+          <select id="filterType">
+            <option value="">전체 유형</option>
+            <option>아파트</option><option>오피스텔</option><option>주택</option>
+            <option>빌라</option><option>상가</option><option>사무실</option>
+            <option>토지</option><option>공장</option><option>창고</option>
+          </select>
+          <select id="filterTrade">
+            <option value="">전체 거래</option>
+            <option>매매</option><option>전세</option><option>월세</option>
+          </select>
+        </div>
+        <input type="text" id="searchInput" placeholder="매물명, 주소 검색">
+        <div id="countBar">표시 <span id="filteredCount">0</span> / 전체 <span id="totalCount">0</span></div>
+      </div>
+
+      <div id="filterCustomer" class="filter-panel hidden">
+        <input type="text" id="searchCustomer" placeholder="고객명, 연락처, 이메일 검색">
+        <div id="countCustomer">고객 <span id="totalCustomer">0</span>명</div>
+      </div>
+
+      <div id="listContainer"></div>
+    </aside>
+
+    <main id="mapContainer">
+      <div id="map"></div>
+    </main>
+  </div>
+</div>
+
+<!-- ===== 설정 ===== -->
+<script>
+  // 카카오 JavaScript 키 (기존 값 그대로 사용)
+  window.__KAKAO_JS_KEY = '282429c788a8c12adc1b06823c873808';
+
+  // 👇👇👇 2단계에서 복사한 Apps Script 웹 앱 URL을 여기에 붙여넣기 👇👇👇
+  window.__GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwbOpGmInOycbnztGRDV-dF19eNCrjFvEC7EskGngpuBSamfUrsVwjCMB0N-l8NZmPY/exec';
+</script>
+<script src="app.js"></script>
+</body>
+</html>
