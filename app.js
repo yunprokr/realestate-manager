@@ -9,6 +9,10 @@ var selectedId = null;
 var currentTab = 'property';
 var authEmail = '';
 
+// 클러스터 임계값
+var CLUSTER_LEVEL_THRESHOLD = 7;  // 7 이상이면 클러스터, 6 이하면 개별
+var currentMarkerMode = null;
+
 var KAKAO_JS_KEY = window.__KAKAO_JS_KEY;
 var API_URL      = window.__GAS_API_URL;
 
@@ -148,17 +152,54 @@ function initMap() {
     center: new kakao.maps.LatLng(33.4996, 126.5312),
     level: 10
   });
+
+  // 클러스터러 초기화
+  initClusterer();
+
+  // 줌 레벨 변경 시 마커 재렌더
+  kakao.maps.event.addListener(map, 'zoom_changed', function() {
+    renderMarkers();
+  });
+}
+
+// ============================================================
+// 클러스터러 초기화
+// ============================================================
+function initClusterer() {
   clusterer = new kakao.maps.MarkerClusterer({
     map: map,
     averageCenter: true,
-    minLevel: 6,
-    styles: [{
-      width: '44px', height: '44px',
-      background: 'rgba(74,144,226,0.85)',
-      borderRadius: '50%', color: '#fff',
-      textAlign: 'center', lineHeight: '44px',
-      fontSize: '13px', fontWeight: 'bold'
-    }]
+    minLevel: CLUSTER_LEVEL_THRESHOLD,
+    disableClickZoom: false,
+    styles: [
+      {
+        width: '40px', height: '40px',
+        background: 'rgba(74,144,226,0.85)',
+        borderRadius: '50%', color: '#fff',
+        textAlign: 'center', lineHeight: '40px',
+        fontSize: '12px', fontWeight: 'bold'
+      },
+      {
+        width: '50px', height: '50px',
+        background: 'rgba(74,144,226,0.9)',
+        borderRadius: '50%', color: '#fff',
+        textAlign: 'center', lineHeight: '50px',
+        fontSize: '13px', fontWeight: 'bold'
+      },
+      {
+        width: '60px', height: '60px',
+        background: 'rgba(52,120,200,0.95)',
+        borderRadius: '50%', color: '#fff',
+        textAlign: 'center', lineHeight: '60px',
+        fontSize: '14px', fontWeight: 'bold'
+      }
+    ]
+  });
+
+  // 클러스터 클릭 시 줌 인
+  kakao.maps.event.addListener(clusterer, 'clusterclick', function(cluster) {
+    var level = map.getLevel();
+    map.setLevel(level - 2, { anchor: cluster.getCenter() });
   });
 }
 
@@ -328,16 +369,12 @@ function getOwnerName(customerId) {
 // ============================================================
 // 마커 렌더 (줌 레벨별 하이브리드)
 // ============================================================
-var CLUSTER_LEVEL_THRESHOLD = 7;  // 7 이상이면 클러스터, 6 이하면 개별
-var currentMarkerMode = null;      // 'cluster' | 'individual'
-
 function renderMarkers() {
   if (!map) return;
 
   var level = map.getLevel();
   var mode = level >= CLUSTER_LEVEL_THRESHOLD ? 'cluster' : 'individual';
 
-  // 모드가 바뀌었으면 전환
   if (mode !== currentMarkerMode) {
     if (mode === 'cluster') {
       renderClusters();
@@ -346,7 +383,6 @@ function renderMarkers() {
     }
     currentMarkerMode = mode;
   } else {
-    // 같은 모드에서 데이터만 갱신
     if (mode === 'cluster') {
       updateClusters();
     } else {
@@ -355,14 +391,8 @@ function renderMarkers() {
   }
 }
 
-// ============================================================
-// 클러스터 모드 (줌 아웃)
-// ============================================================
 function renderClusters() {
-  // 개별 마커 제거
   clearIndividualMarkers();
-
-  // 클러스터러 초기화
   if (clusterer) clusterer.clear();
 
   var filtered = getFilteredProperties();
@@ -386,9 +416,6 @@ function renderClusters() {
   clusterMarkers = markersForCluster;
 }
 
-// ============================================================
-// 클러스터 데이터 갱신 (모드 유지)
-// ============================================================
 function updateClusters() {
   if (!clusterer) return;
   clusterer.clear();
@@ -414,15 +441,10 @@ function updateClusters() {
   clusterMarkers = markersForCluster;
 }
 
-// ============================================================
-// 개별 마커 모드 (줌 인)
-// ============================================================
 function renderIndividualMarkers() {
-  // 클러스터 제거
   if (clusterer) clusterer.clear();
   clusterMarkers = [];
 
-  // 기존 오버레이 제거
   clearIndividualMarkers();
 
   var filtered = getFilteredProperties();
@@ -466,6 +488,7 @@ function clearIndividualMarkers() {
   });
   individualMarkers = [];
 }
+
 
 // ============================================================
 // 클러스터러 초기화 (initMap에 포함)
@@ -521,13 +544,9 @@ function focusProperty(id) {
   var p = allProperties.find(x => x.매물ID === id);
   if (!p) return;
 
-  // 지도 이동
+  // 지도 이동 (줌 레벨도 개별 표시 수준으로)
   if (p.lat && p.lng) {
     var pos = new kakao.maps.LatLng(p.lat, p.lng);
-
-    // 클러스터 모드에서 위치를 찾기 위해 현재 줌 레벨 확인
-    var level = map.getLevel();
-    // 매물 위치로 이동 (줌 레벨도 개별 표시 수준으로)
     map.setLevel(5, { anchor: pos });
     map.panTo(pos);
   }
