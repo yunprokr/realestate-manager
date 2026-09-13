@@ -366,7 +366,7 @@ function getOwnerName(customerId) {
 }
 
 // ============================================================
-// 마커 렌더 (줌 레벨별 하이브리드) - 단순화 버전
+// 마커 렌더 (줌 레벨별 하이브리드 + 동일 좌표 오프셋)
 // ============================================================
 function renderMarkers() {
   if (!map) return;
@@ -374,7 +374,7 @@ function renderMarkers() {
   var level = map.getLevel();
   var useCluster = level >= CLUSTER_LEVEL_THRESHOLD;
 
-  // 항상 기존 마커 모두 제거
+  // 기존 마커 제거
   if (clusterer) clusterer.clear();
   clusterMarkers = [];
   clearIndividualMarkers();
@@ -382,7 +382,7 @@ function renderMarkers() {
   var filtered = getFilteredProperties();
 
   if (useCluster) {
-    // 클러스터 모드
+    // ===== 클러스터 모드 =====
     var markersForCluster = [];
     filtered.forEach(p => {
       if (!p.lat || !p.lng) return;
@@ -398,7 +398,6 @@ function renderMarkers() {
     clusterer.addMarkers(markersForCluster);
     clusterMarkers = markersForCluster;
 
-    // 클러스터러의 개별 마커 클릭 이벤트
     markersForCluster.forEach(m => {
       kakao.maps.event.addListener(m, 'click', function() {
         focusProperty(m._propertyId);
@@ -406,16 +405,24 @@ function renderMarkers() {
     });
 
   } else {
-    // 개별 모드 - 커스텀 오버레이
-    filtered.forEach(p => {
-      if (!p.lat || !p.lng) return;
-      var pos = new kakao.maps.LatLng(p.lat, p.lng);
+    // ===== 개별 모드 (오프셋 적용) =====
+    var positioned = offsetDuplicateCoords(filtered);
+
+    positioned.forEach(item => {
+      var p = item.property;
+      var pos = new kakao.maps.LatLng(item.lat, item.lng);
 
       var content = document.createElement('div');
       content.className = 'map-price-marker';
       content.style.background = p.색상;
       content.textContent = formatPriceShort(p);
       content.setAttribute('data-id', p.매물ID);
+
+      // 그룹(2건 이상)이면 순번 표시
+      if (item.groupSize > 1) {
+        content.classList.add('grouped');
+        content.textContent = formatPriceShort(p) + ' ·' + item.groupIndex;
+      }
 
       content.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -433,8 +440,8 @@ function renderMarkers() {
       individualMarkers.push({
         _overlay: overlay,
         _propertyId: p.매물ID,
-        _lat: p.lat,
-        _lng: p.lng
+        _lat: item.lat,
+        _lng: item.lng
       });
     });
   }
@@ -442,14 +449,61 @@ function renderMarkers() {
   currentMarkerMode = useCluster ? 'cluster' : 'individual';
 }
 
-function clearIndividualMarkers() {
-  individualMarkers.forEach(m => {
-    if (m._overlay) m._overlay.setMap(null);
+// ============================================================
+// 동일 좌표 매물 오프셋 계산
+// ============================================================
+function offsetDuplicateCoords(properties) {
+  var coordMap = {};
+  var result = [];
+
+  // 좌표 그룹화
+  properties.forEach(p => {
+    if (!p.lat || !p.lng) return;
+    var key = p.lat.toFixed(6) + ',' + p.lng.toFixed(6);
+    if (!coordMap[key]) coordMap[key] = [];
+    coordMap[key].push(p);
   });
-  individualMarkers = [];
+
+  // 그룹별로 오프셋
+  Object.keys(coordMap).forEach(key => {
+    var group = coordMap[key];
+
+    if (group.length === 1) {
+      // 단독 매물: 그대로
+      result.push({
+        property: group[0],
+        lat: group[0].lat,
+        lng: group[0].lng,
+        groupSize: 1,
+        groupIndex: 1
+      });
+    } else {
+      // 여러 건: 원형 배치
+      var radius = 0.00012; // 약 12~15m 반경
+      var count = group.length;
+
+      group.forEach((p, i) => {
+        var angle = (2 * Math.PI / count) * i - Math.PI / 2;
+        var offsetLat = p.lat + (radius * Math.cos(angle));
+        var offsetLng = p.lng + (radius * Math.sin(angle) / Math.cos(p.lat * Math.PI / 180));
+
+        result.push({
+          property: p,
+          lat: offsetLat,
+          lng: offsetLng,
+          groupSize: count,
+          groupIndex: i + 1
+        });
+      });
+    }
+  });
+
+  return result;
 }
 
-
+// ============================================================
+// 개별 마커 정리
+// ============================================================
 function clearIndividualMarkers() {
   individualMarkers.forEach(m => {
     if (m._overlay) m._overlay.setMap(null);
@@ -472,19 +526,24 @@ function focusProperty(id) {
   var p = allProperties.find(x => x.매물ID === id);
   if (!p) return;
 
-  // 지도 이동 (줌 레벨도 개별 표시 수준으로)
-  if (p.lat && p.lng) {
-    var pos = new kakao.maps.LatLng(p.lat, p.lng);
+  // 지도 이동: 개별 마커의 오프셋된 좌표 우선 사용
+  var m = individualMarkers.find(x => x._propertyId === id);
+  if (m && m._lat && m._lng) {
+    var pos = new kakao.maps.LatLng(m._lat, m._lng);
     map.setLevel(5, { anchor: pos });
     map.panTo(pos);
+  } else if (p.lat && p.lng) {
+    // 클러스터 모드에서 선택한 경우: 원래 좌표
+    var pos2 = new kakao.maps.LatLng(p.lat, p.lng);
+    map.setLevel(5, { anchor: pos2 });
+    map.panTo(pos2);
   }
 
-  // 선택된 마커 하이라이트 (개별 모드일 때)
+  // 선택 하이라이트
   individualMarkers.forEach(mk => {
     var el = mk._overlay && mk._overlay.getContent ? mk._overlay.getContent() : null;
     if (el && el.classList) el.classList.remove('active');
   });
-  var m = individualMarkers.find(x => x._propertyId === id);
   if (m && m._overlay) {
     var el2 = m._overlay.getContent ? m._overlay.getContent() : null;
     if (el2 && el2.classList) el2.classList.add('active');
