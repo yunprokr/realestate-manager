@@ -304,3 +304,10 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
   outline-offset: 2px;
   transform: scale(1.1);
 }
+
+/* 동일 좌표 그룹 매물 (2건 이상) */
+.map-price-marker.grouped {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-width: 2px;
+}
