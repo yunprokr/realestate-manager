@@ -266,3 +266,41 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
   border-radius: 10px;
   font-weight: 500;
 }
+
+/* ===== 클러스터러 스타일 ===== */
+.cluster-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,.25);
+  cursor: pointer;
+}
+
+/* ===== 개별 마커 (금액 배지) ===== */
+.map-price-marker {
+  display: inline-block;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  border: 2px solid #fff;
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+  user-select: none;
+}
+.map-price-marker:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  z-index: 100;
+}
+.map-price-marker.active {
+  outline: 3px solid #4A90E2;
+  outline-offset: 2px;
+  transform: scale(1.1);
+}
