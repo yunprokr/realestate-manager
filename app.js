@@ -10,7 +10,7 @@ var currentTab = 'property';
 var authEmail = '';
 
 // 클러스터 임계값
-var CLUSTER_LEVEL_THRESHOLD = 7;  // 7 이상이면 클러스터, 6 이하면 개별
+var CLUSTER_LEVEL_THRESHOLD = 8;  // 8 이상이면 클러스터, 6 이하면 개별
 var currentMarkerMode = null;
 
 var KAKAO_JS_KEY = window.__KAKAO_JS_KEY;
@@ -153,13 +153,12 @@ function initMap() {
     level: 10
   });
 
-  // 클러스터러 초기화
   initClusterer();
 
-  // 줌 레벨 변경 시 마커 재렌더
-  kakao.maps.event.addListener(map, 'zoom_changed', function() {
+  // 줌 변경 시 마커 재렌더 (디바운스)
+  kakao.maps.event.addListener(map, 'zoom_changed', debounce(function() {
     renderMarkers();
-  });
+  }, 150));
 }
 
 // ============================================================
@@ -367,119 +366,80 @@ function getOwnerName(customerId) {
 }
 
 // ============================================================
-// 마커 렌더 (줌 레벨별 하이브리드)
+// 마커 렌더 (줌 레벨별 하이브리드) - 단순화 버전
 // ============================================================
 function renderMarkers() {
   if (!map) return;
 
   var level = map.getLevel();
-  var mode = level >= CLUSTER_LEVEL_THRESHOLD ? 'cluster' : 'individual';
+  var useCluster = level >= CLUSTER_LEVEL_THRESHOLD;
 
-  if (mode !== currentMarkerMode) {
-    if (mode === 'cluster') {
-      renderClusters();
-    } else {
-      renderIndividualMarkers();
-    }
-    currentMarkerMode = mode;
-  } else {
-    if (mode === 'cluster') {
-      updateClusters();
-    } else {
-      renderIndividualMarkers();
-    }
-  }
-}
-
-function renderClusters() {
-  clearIndividualMarkers();
-  if (clusterer) clusterer.clear();
-
-  var filtered = getFilteredProperties();
-  var markersForCluster = [];
-
-  filtered.forEach(p => {
-    if (!p.lat || !p.lng) return;
-    var pos = new kakao.maps.LatLng(p.lat, p.lng);
-    var marker = new kakao.maps.Marker({
-      position: pos,
-      title: p.매물명
-    });
-    marker._propertyId = p.매물ID;
-    marker._property = p;
-    marker._lat = p.lat;
-    marker._lng = p.lng;
-    markersForCluster.push(marker);
-  });
-
-  clusterer.addMarkers(markersForCluster);
-  clusterMarkers = markersForCluster;
-}
-
-function updateClusters() {
-  if (!clusterer) return;
-  clusterer.clear();
-
-  var filtered = getFilteredProperties();
-  var markersForCluster = [];
-
-  filtered.forEach(p => {
-    if (!p.lat || !p.lng) return;
-    var pos = new kakao.maps.LatLng(p.lat, p.lng);
-    var marker = new kakao.maps.Marker({
-      position: pos,
-      title: p.매물명
-    });
-    marker._propertyId = p.매물ID;
-    marker._property = p;
-    marker._lat = p.lat;
-    marker._lng = p.lng;
-    markersForCluster.push(marker);
-  });
-
-  clusterer.addMarkers(markersForCluster);
-  clusterMarkers = markersForCluster;
-}
-
-function renderIndividualMarkers() {
+  // 항상 기존 마커 모두 제거
   if (clusterer) clusterer.clear();
   clusterMarkers = [];
-
   clearIndividualMarkers();
 
   var filtered = getFilteredProperties();
 
-  filtered.forEach(p => {
-    if (!p.lat || !p.lng) return;
-    var pos = new kakao.maps.LatLng(p.lat, p.lng);
+  if (useCluster) {
+    // 클러스터 모드
+    var markersForCluster = [];
+    filtered.forEach(p => {
+      if (!p.lat || !p.lng) return;
+      var pos = new kakao.maps.LatLng(p.lat, p.lng);
+      var marker = new kakao.maps.Marker({
+        position: pos,
+        title: p.매물명
+      });
+      marker._propertyId = p.매물ID;
+      marker._property = p;
+      markersForCluster.push(marker);
+    });
+    clusterer.addMarkers(markersForCluster);
+    clusterMarkers = markersForCluster;
 
-    var content = document.createElement('div');
-    content.className = 'map-price-marker';
-    content.style.background = p.색상;
-    content.textContent = formatPriceShort(p);
-    content.setAttribute('data-id', p.매물ID);
-
-    content.addEventListener('click', (e) => {
-      e.stopPropagation();
-      focusProperty(p.매물ID);
+    // 클러스터러의 개별 마커 클릭 이벤트
+    markersForCluster.forEach(m => {
+      kakao.maps.event.addListener(m, 'click', function() {
+        focusProperty(m._propertyId);
+      });
     });
 
-    var overlay = new kakao.maps.CustomOverlay({
-      position: pos,
-      content: content,
-      yAnchor: 1.0,
-      zIndex: 10
-    });
+  } else {
+    // 개별 모드 - 커스텀 오버레이
+    filtered.forEach(p => {
+      if (!p.lat || !p.lng) return;
+      var pos = new kakao.maps.LatLng(p.lat, p.lng);
 
-    overlay.setMap(map);
+      var content = document.createElement('div');
+      content.className = 'map-price-marker';
+      content.style.background = p.색상;
+      content.textContent = formatPriceShort(p);
+      content.setAttribute('data-id', p.매물ID);
 
-    individualMarkers.push({
-      _overlay: overlay,
-      _propertyId: p.매물ID,
-      _lat: p.lat,
-      _lng: p.lng
+      content.addEventListener('click', (e) => {
+        e.stopPropagation();
+        focusProperty(p.매물ID);
+      });
+
+      var overlay = new kakao.maps.CustomOverlay({
+        position: pos,
+        content: content,
+        yAnchor: 1.0,
+        zIndex: 10
+      });
+      overlay.setMap(map);
+
+      individualMarkers.push({
+        _overlay: overlay,
+        _propertyId: p.매물ID,
+        _lat: p.lat,
+        _lng: p.lng
+      });
     });
-  });
+  }
+
+  currentMarkerMode = useCluster ? 'cluster' : 'individual';
 }
 
 function clearIndividualMarkers() {
@@ -490,46 +450,14 @@ function clearIndividualMarkers() {
 }
 
 
-// ============================================================
-// 클러스터러 초기화 (initMap에 포함)
-// ============================================================
-function initClusterer() {
-  clusterer = new kakao.maps.MarkerClusterer({
-    map: map,
-    averageCenter: true,
-    minLevel: CLUSTER_LEVEL_THRESHOLD,
-    disableClickZoom: false,
-    styles: [
-      {
-        width: '40px', height: '40px',
-        background: 'rgba(74,144,226,0.85)',
-        borderRadius: '50%', color: '#fff',
-        textAlign: 'center', lineHeight: '40px',
-        fontSize: '12px', fontWeight: 'bold'
-      },
-      {
-        width: '50px', height: '50px',
-        background: 'rgba(74,144,226,0.9)',
-        borderRadius: '50%', color: '#fff',
-        textAlign: 'center', lineHeight: '50px',
-        fontSize: '13px', fontWeight: 'bold'
-      },
-      {
-        width: '60px', height: '60px',
-        background: 'rgba(52,120,200,0.95)',
-        borderRadius: '50%', color: '#fff',
-        textAlign: 'center', lineHeight: '60px',
-        fontSize: '14px', fontWeight: 'bold'
-      }
-    ]
+function clearIndividualMarkers() {
+  individualMarkers.forEach(m => {
+    if (m._overlay) m._overlay.setMap(null);
   });
-
-  // 클러스터 클릭 시 줌 인
-  kakao.maps.event.addListener(clusterer, 'clusterclick', function(cluster) {
-    var level = map.getLevel();
-    map.setLevel(level - 2, { anchor: cluster.getCenter() });
-  });
+  individualMarkers = [];
 }
+
+
 
 // ============================================================
 // 매물 선택
