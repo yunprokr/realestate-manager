@@ -257,3 +257,12 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
   .listing-card { padding: 10px; }
   .listing-card .title { font-size: 13px; }
 }
+
+.type-detail-tag {
+  font-size: 10px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
