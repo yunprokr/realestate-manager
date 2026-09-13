@@ -12,6 +12,18 @@ var KAKAO_JS_KEY = window.__KAKAO_JS_KEY;
 var API_URL      = window.__GAS_API_URL;
 
 // ============================================================
+// 매물유형 → 상세 목록
+// ============================================================
+var TYPE_DETAIL_MAP = {
+  '토지':     ['전', '답', '과수원', '임야', '대지', '잡종지', '목장용지'],
+  '상가':     ['일반상가', '사무실', '상가건물(통매)', '숙박시설(펜션/모텔)', '근생', '빌딩'],
+  '공장창고': ['공장', '창고', '야적장', '지식산업센터'],
+  '주택':     ['원룸', '2룸', '3룸', '단독', '단독다가구', '구옥', '전원농가',
+               '타운하우스', '아파트', '빌라', '연립', '다세대', '오피스텔',
+               '생활형숙박시설']
+};
+
+// ============================================================
 // 인증
 // ============================================================
 document.getElementById('authBtn').addEventListener('click', tryAuth);
@@ -55,7 +67,6 @@ function tryAuth() {
     });
 }
 
-// 자동 로그인
 (function() {
   var saved = localStorage.getItem('authEmail');
   if (saved) {
@@ -173,10 +184,15 @@ function bindTabs() {
 // 필터
 // ============================================================
 function bindFilters() {
-  ['filterType', 'filterTrade'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () => {
-      renderList(); renderMarkers();
-    });
+  document.getElementById('filterType').addEventListener('change', () => {
+    updateTypeDetailDropdown();
+    renderList(); renderMarkers();
+  });
+  document.getElementById('filterTypeDetail').addEventListener('change', () => {
+    renderList(); renderMarkers();
+  });
+  document.getElementById('filterTrade').addEventListener('change', () => {
+    renderList(); renderMarkers();
   });
   ['priceMin', 'priceMax'].forEach(id => {
     document.getElementById(id).addEventListener('input', debounce(() => {
@@ -188,11 +204,31 @@ function bindFilters() {
   }, 250));
 }
 
+// 매물유형 변경 시 상세 드롭다운 갱신
+function updateTypeDetailDropdown() {
+  var type = document.getElementById('filterType').value;
+  var detailSel = document.getElementById('filterTypeDetail');
+  var curVal = detailSel.value;
+
+  detailSel.innerHTML = '<option value="">전체 상세</option>';
+
+  if (type && TYPE_DETAIL_MAP[type]) {
+    TYPE_DETAIL_MAP[type].forEach(d => {
+      var opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = d;
+      if (d === curVal) opt.selected = true;
+      detailSel.appendChild(opt);
+    });
+  }
+}
+
 // ============================================================
 // 필터링
 // ============================================================
 function getFilteredProperties() {
   var type = document.getElementById('filterType').value;
+  var typeDetail = document.getElementById('filterTypeDetail').value;
   var trade = document.getElementById('filterTrade').value;
   var minP = parseFloat(document.getElementById('priceMin').value) || 0;
   var maxP = parseFloat(document.getElementById('priceMax').value) || Infinity;
@@ -200,9 +236,9 @@ function getFilteredProperties() {
 
   return allProperties.filter(p => {
     if (type && p.매물유형 !== type) return false;
+    if (typeDetail && p.매물유형상세 !== typeDetail) return false;
     if (trade && p.거래유형 !== trade) return false;
 
-    // 가격 필터 (거래유형별 대표 가격)
     if (minP > 0 || maxP < Infinity) {
       var price = getRepresentativePrice(p);
       if (price !== null) {
@@ -218,7 +254,6 @@ function getFilteredProperties() {
   });
 }
 
-// 거래유형별 대표 가격 (필터/정렬용)
 function getRepresentativePrice(p) {
   var t = p.거래유형 || '';
   if (t === '매매') return Number(p.매매가) || null;
@@ -245,7 +280,6 @@ function renderList() {
     return;
   }
 
-  // 확인일 기준 최근 수정순 정렬
   filtered.sort((a, b) => {
     var da = a.확인일 || a.등록일 || '';
     var db = b.확인일 || b.등록일 || '';
@@ -260,6 +294,7 @@ function renderList() {
     html += '<div class="listing-card ' + (selectedId === p.매물ID ? 'active' : '') + '" data-id="' + escapeHtml(p.매물ID) + '">';
     html += '  <div class="row-1">';
     html += '    <span class="type-tag" style="background:' + p.색상 + '">' + escapeHtml(p.매물유형 || '기타') + '</span>';
+    if (p.매물유형상세) html += '    <span class="type-detail-tag">' + escapeHtml(p.매물유형상세) + '</span>';
     if (p.매물상태) html += '<span class="status-tag">' + escapeHtml(p.매물상태) + '</span>';
     html += '  </div>';
     html += '  <div class="title">' + escapeHtml(p.매물명 || '이름없음') + '</div>';
@@ -283,7 +318,6 @@ function renderList() {
   });
 }
 
-// 소유주 이름 조회
 function getOwnerName(customerId) {
   if (!customerId) return '';
   var c = allCustomers.find(x => String(x.고객ID) === String(customerId));
@@ -340,27 +374,21 @@ function focusProperty(id) {
   var p = allProperties.find(x => x.매물ID === id);
   if (!p) return;
 
-  // 지도 이동
   var m = markers.find(x => x._propertyId === id);
   if (m && map) {
     map.panTo(m.getPosition());
     if (map.getLevel() > 5) map.setLevel(4);
   }
 
-  // 상세 표시
   var isMobile = window.innerWidth <= 1023;
   if (isMobile) showBottomSheet(p);
   else showDetailPanel(p);
 
-  // 모바일: 리스트 상단 스크롤
   if (window.innerWidth <= 768) {
     document.getElementById('listContainer').scrollTop = 0;
   }
 }
 
-// ============================================================
-// 상세 표시 (PC 패널)
-// ============================================================
 function showDetailPanel(p) {
   var panel = document.getElementById('detailPanel');
   document.getElementById('detailContent').innerHTML = buildDetailHTML(p);
@@ -382,7 +410,7 @@ function bindDetailClose() {
 }
 
 // ============================================================
-// 상세 HTML 생성 (매물유형별 조건부)
+// 상세 HTML
 // ============================================================
 function buildDetailHTML(p) {
   var ownerName = getOwnerName(p.고객ID);
@@ -391,7 +419,7 @@ function buildDetailHTML(p) {
   h += '<div class="detail-header">';
   h += '  <div class="detail-type-row">';
   h += '    <span class="type-tag" style="background:' + p.색상 + '">' + escapeHtml(p.매물유형 || '기타') + '</span>';
-  if (p.매물유형상세) h += '<span class="type-tag" style="background:#aaa">' + escapeHtml(p.매물유형상세) + '</span>';
+  if (p.매물유형상세) h += '    <span class="type-detail-tag">' + escapeHtml(p.매물유형상세) + '</span>';
   if (p.매물상태) h += '<span class="status-tag">' + escapeHtml(p.매물상태) + '</span>';
   h += '  </div>';
   h += '  <div class="detail-title">' + escapeHtml(p.매물명 || '이름없음') + '</div>';
@@ -401,10 +429,8 @@ function buildDetailHTML(p) {
   if (ownerName) h += '  <div class="detail-owner">👤 소유주: ' + escapeHtml(ownerName) + '</div>';
   h += '</div>';
 
-  // 유형별 조건부 필드
   h += buildTypeSpecificHTML(p);
 
-  // 공통: 메모
   if (p.내용) {
     h += '<div class="detail-section">';
     h += '  <h4>메모</h4>';
@@ -412,7 +438,6 @@ function buildDetailHTML(p) {
     h += '</div>';
   }
 
-  // 메타
   h += '<div class="detail-section">';
   h += '  <h4>등록 정보</h4>';
   if (p.등록일) h += detailRow('등록일', p.등록일);
@@ -420,7 +445,6 @@ function buildDetailHTML(p) {
   if (p.고객ID) h += detailRow('고객ID', p.고객ID);
   h += '</div>';
 
-  // 블로그 버튼
   if (p.블로그링크) {
     h += '<div class="detail-actions">';
     h += '  <a class="btn-blog" href="' + escapeHtml(p.블로그링크) + '" target="_blank" rel="noopener">📝 블로그에서 보기</a>';
@@ -434,7 +458,7 @@ function buildTypeSpecificHTML(p) {
   var t = p.매물유형;
   var h = '';
 
-  // 금액 섹션 (거래유형별)
+  // 금액
   h += '<div class="detail-section"><h4>금액</h4>';
   if (p.매매가) h += detailRow('매매가', formatMan(p.매매가));
   if (p.보증금) h += detailRow('보증금', formatMan(p.보증금));
@@ -446,7 +470,7 @@ function buildTypeSpecificHTML(p) {
   if (p.평단가) h += detailRow('평단가', formatMan(p.평단가) + '/평');
   h += '</div>';
 
-  // 면적 (모든 유형)
+  // 면적
   var hasArea = p.대지 || p.공급 || p.전용 || p.연면적;
   if (hasArea) {
     h += '<div class="detail-section"><h4>면적</h4>';
@@ -454,46 +478,6 @@ function buildTypeSpecificHTML(p) {
     if (p.공급) h += detailRow('공급', p.공급 + ' ㎡');
     if (p.전용) h += detailRow('전용', p.전용 + ' ㎡');
     if (p.연면적) h += detailRow('연면적', p.연면적 + ' ㎡');
-    h += '</div>';
-  }
-
-  // 아파트/오피스텔
-  if (t === '아파트' || t === '오피스텔') {
-    h += '<div class="detail-section"><h4>건물 정보</h4>';
-    if (p.방) h += detailRow('방', p.방 + '개');
-    if (p.욕실) h += detailRow('욕실', p.욕실 + '개');
-    if (p.해당층총층) h += detailRow('층', p.해당층총층);
-    if (p.건물명) h += detailRow('건물명', p.건물명);
-    if (p.해당동) h += detailRow('동', p.해당동);
-    if (p.호수) h += detailRow('호수', p.호수);
-    if (p.방향) h += detailRow('방향', p.방향);
-    if (p.주차) h += detailRow('주차', p.주차);
-    if (p.사용승인일) h += detailRow('사용승인일', p.사용승인일);
-    h += '</div>';
-  }
-
-  // 주택/빌라
-  if (t === '주택' || t === '빌라') {
-    h += '<div class="detail-section"><h4>건물 정보</h4>';
-    if (p.방) h += detailRow('방', p.방 + '개');
-    if (p.욕실) h += detailRow('욕실', p.욕실 + '개');
-    if (p.건축물용도) h += detailRow('건축물용도', p.건축물용도);
-    if (p.해당층총층) h += detailRow('층', p.해당층총층);
-    if (p.방향) h += detailRow('방향', p.방향);
-    if (p.특수구조) h += detailRow('특수구조', p.특수구조);
-    if (p.특수구조상세) h += detailRow('특수구조 상세', p.특수구조상세);
-    if (p.반려동물) h += detailRow('반려동물', p.반려동물);
-    if (p.엘리베이터) h += detailRow('엘리베이터', p.엘리베이터);  // 신규
-    h += '</div>';
-  }
-
-  // 상가/사무실
-  if (t === '상가' || t === '사무실') {
-    h += '<div class="detail-section"><h4>상가 정보</h4>';
-    if (p.해당층총층) h += detailRow('층', p.해당층총층);
-    if (p.현업종) h += detailRow('현업종', p.현업종);
-    if (p.추천업종) h += detailRow('추천업종', p.추천업종);
-    if (p.임대현황) h += detailRow('임대현황', p.임대현황);
     h += '</div>';
   }
 
@@ -506,12 +490,43 @@ function buildTypeSpecificHTML(p) {
     h += '</div>';
   }
 
-  // 공장/창고
-  if (t === '공장' || t === '창고') {
+  // 상가
+  if (t === '상가') {
+    h += '<div class="detail-section"><h4>상가 정보</h4>';
+    if (p.해당층총층) h += detailRow('층', p.해당층총층);
+    if (p.현업종) h += detailRow('현업종', p.현업종);
+    if (p.추천업종) h += detailRow('추천업종', p.추천업종);
+    if (p.임대현황) h += detailRow('임대현황', p.임대현황);
+    h += '</div>';
+  }
+
+  // 공장창고
+  if (t === '공장창고') {
     h += '<div class="detail-section"><h4>공장/창고 정보</h4>';
     if (p.사용전력) h += detailRow('사용전력', p.사용전력 + ' kW');
     if (p.층고) h += detailRow('층고', p.층고 + ' m');
     if (p.용도지역) h += detailRow('용도지역', p.용도지역);
+    h += '</div>';
+  }
+
+  // 주택 (B: 통합, 빈 값 숨김)
+  if (t === '주택') {
+    h += '<div class="detail-section"><h4>주택 정보</h4>';
+    if (p.방) h += detailRow('방', p.방 + '개');
+    if (p.욕실) h += detailRow('욕실', p.욕실 + '개');
+    if (p.건축물용도) h += detailRow('건축물용도', p.건축물용도);
+    if (p.건물명) h += detailRow('건물명', p.건물명);
+    if (p.해당동) h += detailRow('동', p.해당동);
+    if (p.호수) h += detailRow('호수', p.호수);
+    if (p.해당층총층) h += detailRow('층', p.해당층총층);
+    if (p.방향) h += detailRow('방향', p.방향);
+    if (p.특수구조) h += detailRow('특수구조', p.특수구조);
+    if (p.특수구조상세) h += detailRow('특수구조 상세', p.특수구조상세);
+    if (p.반려동물) h += detailRow('반려동물', p.반려동물);
+    if (p.엘리베이터) h += detailRow('엘리베이터', p.엘리베이터);
+    if (p.주차) h += detailRow('주차', p.주차);
+    if (p.세대수) h += detailRow('세대수', p.세대수);
+    if (p.사용승인일) h += detailRow('사용승인일', p.사용승인일);
     h += '</div>';
   }
 
@@ -583,7 +598,6 @@ function debounce(fn, ms) {
   return function() { clearTimeout(t); t = setTimeout(fn, ms); };
 }
 
-// 매물등록 버튼 (다음 단계)
 document.getElementById('addPropertyBtn').addEventListener('click', () => {
   document.getElementById('addPropertyModal').classList.remove('hidden');
 });
