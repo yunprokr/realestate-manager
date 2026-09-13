@@ -26,55 +26,90 @@
     <div id="loadingMsg">데이터 로드 중...</div>
   </div>
 
+  <!-- 상단 바 -->
   <div id="topbar">
     <div class="brand">🏢 매물관리 <span id="totalBadge" class="badge">0</span></div>
     <div class="tabs">
       <button class="tab active" data-tab="property">매물</button>
       <button class="tab" data-tab="customer">고객</button>
     </div>
+    <button id="addPropertyBtn" class="btn-primary">+ 매물등록</button>
     <button id="logoutBtn" class="logout">로그아웃</button>
   </div>
 
-  <div id="layout">
-    <aside id="sidebar">
-      <div id="filterProperty" class="filter-panel">
-        <div class="filter-row">
-          <select id="filterType">
-            <option value="">전체 유형</option>
-            <option>아파트</option><option>오피스텔</option><option>주택</option>
-            <option>빌라</option><option>상가</option><option>사무실</option>
-            <option>토지</option><option>공장</option><option>창고</option>
-          </select>
-          <select id="filterTrade">
-            <option value="">전체 거래</option>
-            <option>매매</option><option>전세</option><option>월세</option>
-          </select>
+  <!-- ===== 매물 탭 ===== -->
+  <div id="propertyPane" class="pane">
+    <div id="layout">
+      <aside id="sidebar">
+        <div class="filter-panel">
+          <div class="filter-row">
+            <select id="filterType">
+              <option value="">전체 유형</option>
+              <option>아파트</option><option>오피스텔</option><option>주택</option>
+              <option>빌라</option><option>상가</option><option>사무실</option>
+              <option>토지</option><option>공장</option><option>창고</option>
+            </select>
+            <select id="filterTrade">
+              <option value="">전체 거래</option>
+              <option>매매</option><option>전세</option><option>연세</option>
+              <option>월세</option><option>단기</option>
+            </select>
+          </div>
+
+          <div class="filter-price">
+            <label>가격범위 (만원)</label>
+            <div class="price-inputs">
+              <input type="number" id="priceMin" placeholder="최소" value="">
+              <span>~</span>
+              <input type="number" id="priceMax" placeholder="최대" value="">
+            </div>
+          </div>
+
+          <input type="text" id="searchInput" placeholder="매물명, 주소, 고객 검색">
+          <div id="countBar">표시 <span id="filteredCount">0</span> / 전체 <span id="totalCount">0</span></div>
         </div>
-        <input type="text" id="searchInput" placeholder="매물명, 주소 검색">
-        <div id="countBar">표시 <span id="filteredCount">0</span> / 전체 <span id="totalCount">0</span></div>
-      </div>
 
-      <div id="filterCustomer" class="filter-panel hidden">
-        <input type="text" id="searchCustomer" placeholder="고객명, 연락처, 이메일 검색">
-        <div id="countCustomer">고객 <span id="totalCustomer">0</span>명</div>
-      </div>
+        <div id="listContainer"></div>
+      </aside>
 
-      <div id="listContainer"></div>
-    </aside>
+      <main id="mapContainer">
+        <div id="map"></div>
+      </main>
 
-    <main id="mapContainer">
-      <div id="map"></div>
-    </main>
+      <!-- PC 상세 패널 -->
+      <aside id="detailPanel" class="hidden">
+        <button class="detail-close" id="detailClosePC">✕</button>
+        <div id="detailContent"></div>
+      </aside>
+    </div>
+
+    <!-- 모바일 하단 시트 -->
+    <div id="bottomSheet" class="hidden">
+      <div class="bs-handle"></div>
+      <button class="detail-close" id="detailCloseMobile">✕</button>
+      <div id="bottomSheetContent"></div>
+    </div>
+  </div>
+
+  <!-- ===== 고객 탭 (다음 단계) ===== -->
+  <div id="customerPane" class="pane hidden">
+    <div class="customer-placeholder">
+      <p>고객관리 화면은 다음 단계에서 구현됩니다.</p>
+    </div>
   </div>
 </div>
 
-<!-- ===== 설정 ===== -->
-<script>
-  // 카카오 JavaScript 키 (기존 값 그대로 사용)
-  window.__KAKAO_JS_KEY = '282429c788a8c12adc1b06823c873808';
+<!-- ===== 매물 등록 모달 (다음 단계) ===== -->
+<div id="addPropertyModal" class="modal hidden">
+  <div class="modal-box">
+    <p>매물 등록 폼은 다음 단계에서 구현됩니다.</p>
+    <button id="closeAddModal">닫기</button>
+  </div>
+</div>
 
-  // 👇👇👇 2단계에서 복사한 Apps Script 웹 앱 URL을 여기에 붙여넣기 👇👇👇
-  window.__GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwbOpGmInOycbnztGRDV-dF19eNCrjFvEC7EskGngpuBSamfUrsVwjCMB0N-l8NZmPY/exec';
+<script>
+  window.__KAKAO_JS_KEY = '282429c788a8c12adc1b06823c873808';
+  window.__GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwbOpGmInOycbnztGRDV-dF19eNCrjFvEC7EskGngpuBSamfUrsVwjCMB0N-l8NZmPY/exec';  // ← 기존 값 유지!
 </script>
 <script src="app.js"></script>
 </body>
