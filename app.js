@@ -854,6 +854,91 @@ function resetAddForm() {
 }
 
 // ============================================================
+// 매물명 자동 생성 트리거
+// ============================================================
+
+// 매물명이 수동 수정되었는지 추적
+var propertyNameManuallyEdited = false;
+
+// 매물명 입력 시 수동 수정 표시
+document.getElementById('f_매물명').addEventListener('input', function() {
+  propertyNameManuallyEdited = true;
+  updateNameHint();
+});
+
+// 자동 생성 버튼 클릭
+document.getElementById('btnGenerateName').addEventListener('click', function() {
+  var name = generatePropertyName();
+  if (!name) {
+    alert('매물유형, 소재지 등 필수 정보를 먼저 입력하세요');
+    return;
+  }
+  if (propertyNameManuallyEdited) {
+    if (!confirm('매물명이 수정되었습니다. 자동 생성으로 덮어쓸까요?')) {
+      return;
+    }
+  }
+  document.getElementById('f_매물명').value = name;
+  propertyNameManuallyEdited = false;
+  updateNameHint();
+});
+
+// 자동 생성 트리거 (필드 변경 시)
+['f_매물유형', 'f_매물유형상세', 'f_소재지', 'f_산', 'f_본번', 'f_부번',
+ 'f_용도지역', 'f_대지', 'f_전용', 'f_연면적',
+ 'f_건물명', 'f_해당동', 'f_호수',
+ 'f_매매가', 'f_보증금_전세', 'f_연세', 'f_보증금_월세', 'f_월세',
+ 'f_보증금_단기', 'f_월세_단기', 'f_권리금'].forEach(id => {
+  var el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('change', autoGenerateName);
+    el.addEventListener('input', debounce(autoGenerateName, 500));
+  }
+});
+
+// 거래 조건 체크박스도 트리거
+document.querySelectorAll('.deal-check input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', autoGenerateName);
+});
+
+// 자동 생성 (수동 수정 안 했을 때만)
+function autoGenerateName() {
+  if (propertyNameManuallyEdited) return;
+
+  var name = generatePropertyName();
+  if (name) {
+    document.getElementById('f_매물명').value = name;
+    updateNameHint();
+  }
+}
+
+// 힌트 표시
+function updateNameHint() {
+  var hint = document.getElementById('nameHint');
+  if (!hint) return;
+
+  if (propertyNameManuallyEdited) {
+    hint.textContent = '⚠ 수동 수정됨 · 자동 생성하려면 🔄 버튼 클릭';
+    hint.className = 'field-hint warning';
+  } else if (document.getElementById('f_매물명').value) {
+    hint.textContent = '✓ 자동 생성됨';
+    hint.className = 'field-hint success';
+  } else {
+    hint.textContent = '';
+    hint.className = 'field-hint';
+  }
+}
+
+// 모달 열 때 초기화
+// (기존 openAddModal 함수 내부 수정)
+var _originalOpenAddModal = openAddModal;
+openAddModal = function() {
+  propertyNameManuallyEdited = false;
+  _originalOpenAddModal();
+};
+
+
+// ============================================================
 // 소재지 드롭다운 로드
 // ============================================================
 function loadLocationOptions() {
