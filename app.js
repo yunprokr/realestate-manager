@@ -160,7 +160,7 @@ function fetchAllData() {
 function initMap() {
   map = new kakao.maps.Map(document.getElementById('map'), {
     center: new kakao.maps.LatLng(33.4996, 126.5312),
-    level: 10
+    level: 9
   });
 
   initClusterer();
@@ -168,7 +168,50 @@ function initMap() {
   kakao.maps.event.addListener(map, 'zoom_changed', debounce(function() {
     renderMarkers();
   }, 150));
+
+  // ⭐ 매물 로드 후 자동으로 범위 조정
+  fitMapToProperties();
 }
+
+// ============================================================
+// 매물 전체가 보이도록 지도 범위 자동 조정
+// ============================================================
+function fitMapToProperties() {
+  if (!map) return;
+
+  // 좌표가 있는 매물만 필터
+  var coords = allProperties.filter(function(p) {
+    return p.lat && p.lng;
+  });
+
+  if (coords.length === 0) return;
+
+  // 바운딩 박스 계산
+  var minLat = coords[0].lat, maxLat = coords[0].lat;
+  var minLng = coords[0].lng, maxLng = coords[0].lng;
+
+  coords.forEach(function(p) {
+    if (p.lat < minLat) minLat = p.lat;
+    if (p.lat > maxLat) maxLat = p.lat;
+    if (p.lng < minLng) minLng = p.lng;
+    if (p.lng > maxLng) maxLng = p.lng;
+  });
+
+  // 남서쪽, 북동쪽 좌표
+  var sw = new kakao.maps.LatLng(minLat, minLng);
+  var ne = new kakao.maps.LatLng(maxLat, maxLng);
+
+  // 범위에 맞게 지도 조정 (여백 50px)
+  var bounds = new kakao.maps.LatLngBounds(sw, ne);
+  map.setBounds(bounds, 50, 50, 50, 50);
+
+  // 너무 확대되면 최소 레벨 제한 (매물이 1~2건일 때)
+  if (map.getLevel() < 5) {
+    map.setLevel(5);
+  }
+}
+
+
 
 function initClusterer() {
   clusterer = new kakao.maps.MarkerClusterer({
