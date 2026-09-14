@@ -811,12 +811,15 @@ function openAddModal() {
   resetAddForm();
   document.getElementById('addPropertyModal').classList.remove('hidden');
 
-  // 소재지 드롭다운 로드
-  loadLocationOptions();
+  // Combobox 초기화 (최초 1회)
+  if (typeof initLocationCombobox === 'function' && !locationCombobox.input) {
+    initLocationCombobox();
+  }
 
-  // 오늘 날짜 표시용
   document.getElementById('geocodeStatus').textContent = '';
 }
+
+
 
 function closeAddModal() {
   document.getElementById('addPropertyModal').classList.add('hidden');
@@ -851,7 +854,30 @@ function resetAddForm() {
 
   // 매물유형상세 드롭다운 초기화
   document.getElementById('f_매물유형상세').innerHTML = '<option value="">선택</option>';
+
+  // ⭐ 소재지 Combobox 초기화
+  if (typeof locationCombobox !== 'undefined' && locationCombobox.input) {
+    locationCombobox.input.value = '';
+    locationCombobox.input.dataset.value = '';
+    locationCombobox.selectedValue = '';
+    if (typeof closeLocationDropdown === 'function') {
+      closeLocationDropdown();
+    }
+  }
+
+  // ⭐ 매물명 수동 수정 플래그 초기화
+  if (typeof propertyNameManuallyEdited !== 'undefined') {
+    propertyNameManuallyEdited = false;
+  }
+
+  // ⭐ 매물명 힌트 초기화
+  var hint = document.getElementById('nameHint');
+  if (hint) {
+    hint.textContent = '';
+    hint.className = 'field-hint';
+  }
 }
+
 
 // ============================================================
 // 매물명 자동 생성 트리거
@@ -939,18 +965,173 @@ openAddModal = function() {
 
 
 // ============================================================
-// 소재지 드롭다운 로드
+// 소재지 Combobox (자동완성 + 드롭다운)
 // ============================================================
-function loadLocationOptions() {
-  var sel = document.getElementById('f_소재지');
-  sel.innerHTML = '<option value="">선택</option>';
+var locationCombobox = {
+  input: null,
+  dropdown: null,
+  highlightedIndex: -1,
+  filteredItems: [],
+  selectedValue: ''
+};
 
-  allLocations.forEach(loc => {
-    var opt = document.createElement('option');
-    opt.value = loc.Location;
-    opt.textContent = loc.Location;
-    sel.appendChild(opt);
+function initLocationCombobox() {
+  var input = document.getElementById('f_소재지');
+  var dropdown = document.getElementById('locationDropdown');
+  var toggleBtn = document.getElementById('btnToggleLocation');
+
+  locationCombobox.input = input;
+  locationCombobox.dropdown = dropdown;
+
+  // 초기값: 이미 선택된 값이 있으면 유지
+  // (매물 수정 시)
+  if (input.dataset.value) {
+    locationCombobox.selectedValue = input.dataset.value;
+  }
+
+  // 입력 시 검색
+  input.addEventListener('input', function() {
+    var keyword = input.value.trim();
+    filterAndShowLocations(keyword);
+    locationCombobox.selectedValue = ''; // 입력 중엔 선택 해제
   });
+
+  // 포커스 시 드롭다운 열기
+  input.addEventListener('focus', function() {
+    filterAndShowLocations(input.value.trim());
+  });
+
+  // 키보드 네비게이션
+  input.addEventListener('keydown', function(e) {
+    if (dropdown.classList.contains('hidden')) {
+      if (e.key === 'ArrowDown') {
+        filterAndShowLocations(input.value.trim());
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      locationCombobox.highlightedIndex++;
+      if (locationCombobox.highlightedIndex >= locationCombobox.filteredItems.length) {
+        locationCombobox.highlightedIndex = 0;
+      }
+      updateHighlight();
+      scrollToHighlighted();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      locationCombobox.highlightedIndex--;
+      if (locationCombobox.highlightedIndex < 0) {
+        locationCombobox.highlightedIndex = locationCombobox.filteredItems.length - 1;
+      }
+      updateHighlight();
+      scrollToHighlighted();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (locationCombobox.highlightedIndex >= 0) {
+        selectLocation(locationCombobox.filteredItems[locationCombobox.highlightedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      closeLocationDropdown();
+    }
+  });
+
+  // 토글 버튼
+  toggleBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (dropdown.classList.contains('hidden')) {
+      filterAndShowLocations(input.value.trim());
+      input.focus();
+    } else {
+      closeLocationDropdown();
+    }
+  });
+
+  // 외부 클릭 시 닫기
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.location-combobox-wrapper')) {
+      closeLocationDropdown();
+    }
+  });
+}
+
+function filterAndShowLocations(keyword) {
+  var dropdown = locationCombobox.dropdown;
+
+  // 필터링
+  var filtered;
+  if (!keyword) {
+    filtered = allLocations.slice(0, 100); // 전체 표시 (최대 100개)
+  } else {
+    var kw = keyword.toLowerCase();
+    filtered = allLocations.filter(loc => {
+      return (loc.Location || '').toLowerCase().indexOf(kw) !== -1;
+    });
+  }
+
+  locationCombobox.filteredItems = filtered;
+  locationCombobox.highlightedIndex = -1;
+
+  // 렌더
+  if (!filtered.length) {
+    dropdown.innerHTML = '<div class="combobox-empty">검색 결과 없음</div>';
+  } else {
+    var html = '';
+    filtered.forEach((loc, i) => {
+      var selected = (loc.Location === locationCombobox.selectedValue) ? ' selected' : '';
+      html += '<div class="combobox-item' + selected + '" data-index="' + i + '">'
+            + escapeHtml(loc.Location) + '</div>';
+    });
+    dropdown.innerHTML = html;
+
+    // 클릭 이벤트
+    dropdown.querySelectorAll('.combobox-item').forEach(item => {
+      item.addEventListener('click', function() {
+        var idx = parseInt(this.dataset.index, 10);
+        selectLocation(locationCombobox.filteredItems[idx]);
+      });
+      item.addEventListener('mouseenter', function() {
+        locationCombobox.highlightedIndex = parseInt(this.dataset.index, 10);
+        updateHighlight();
+      });
+    });
+  }
+
+  dropdown.classList.remove('hidden');
+}
+
+function updateHighlight() {
+  var items = locationCombobox.dropdown.querySelectorAll('.combobox-item');
+  items.forEach((item, i) => {
+    item.classList.toggle('highlighted', i === locationCombobox.highlightedIndex);
+  });
+}
+
+function scrollToHighlighted() {
+  var items = locationCombobox.dropdown.querySelectorAll('.combobox-item');
+  if (locationCombobox.highlightedIndex >= 0 && items[locationCombobox.highlightedIndex]) {
+    items[locationCombobox.highlightedIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function selectLocation(loc) {
+  if (!loc) return;
+
+  locationCombobox.input.value = loc.Location;
+  locationCombobox.selectedValue = loc.Location;
+  locationCombobox.input.dataset.value = loc.Location;
+  closeLocationDropdown();
+
+  // 매물명 자동 생성 트리거
+  if (typeof autoGenerateName === 'function') {
+    autoGenerateName();
+  }
+}
+
+function closeLocationDropdown() {
+  locationCombobox.dropdown.classList.add('hidden');
+  locationCombobox.highlightedIndex = -1;
 }
 
 // ============================================================
@@ -1014,37 +1195,39 @@ function renderTypeSpecificFields(type) {
       { id: 'f_층고', label: '층고 (m)', type: 'number' },
       { id: 'f_용도지역', label: '용도지역', type: 'text' }
     ];
-  } else if (type === '주택') {
-    fields = [
-      { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
-      { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
-      { id: 'f_공급', label: '공급 (㎡)', type: 'number' },
-      { id: 'f_방', label: '방', type: 'number' },
-      { id: 'f_욕실', label: '욕실', type: 'number' },
-      { id: 'f_건축물용도', label: '건축물용도', type: 'text' },
-      { id: 'f_건물명', label: '건물명', type: 'text' },
-      { id: 'f_해당동', label: '해당동', type: 'text' },
-      { id: 'f_호수', label: '호수', type: 'text' },
-      { id: 'f_해당층총층', label: '해당층/총층', type: 'text' },
-      { id: 'f_방향', label: '방향', type: 'text' },
-      { id: 'f_주차', label: '주차', type: 'text' },
-      { id: 'f_세대수', label: '세대수', type: 'number' },
-      { id: 'f_사용승인일', label: '사용승인일', type: 'date' },
-      { id: 'f_특수구조', label: '특수구조 (복층/다락)', type: 'text' },
-      { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
-      { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
-      { id: 'f_엘리베이터', label: '엘리베이터', type: 'text' }
-    ];
-  }
+} else if (type === '주택') {
+  fields = [
+    { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
+    { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
+    { id: 'f_공급', label: '공급 (㎡)', type: 'number' },
+    { id: 'f_방', label: '방', type: 'number' },
+    { id: 'f_욕실', label: '욕실', type: 'number' },
+    { id: 'f_건축물용도', label: '건축물용도', type: 'text' },
+    { id: 'f_건물명', label: '건물명', type: 'text', placeholder: '예: 마크힐노형' },
+    { id: 'f_해당동', label: '해당동', type: 'text', placeholder: '예: 102동 (숫자만 입력 가능)' },
+    { id: 'f_호수', label: '호수', type: 'text', placeholder: '예: 401호 (숫자만 입력 가능)' },
+    { id: 'f_해당층총층', label: '해당층/총층', type: 'text', placeholder: '예: 4층/총4층' },
+    { id: 'f_방향', label: '방향', type: 'text', placeholder: '예: 남향' },
+    { id: 'f_주차', label: '주차', type: 'text' },
+    { id: 'f_세대수', label: '세대수', type: 'number' },
+    { id: 'f_사용승인일', label: '사용승인일', type: 'date' },
+    { id: 'f_특수구조', label: '특수구조 (복층/다락)', type: 'text' },
+    { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
+    { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
+    { id: 'f_엘리베이터', label: '엘리베이터', type: 'text' }
+  ];
+}
 
-  fields.forEach(f => {
-    var div = document.createElement('div');
-    div.className = 'form-field';
-    div.innerHTML = '<label>' + f.label + '</label>'
-      + '<input type="' + (f.type || 'text') + '" id="' + f.id + '">';
-    grid.appendChild(div);
-  });
+fields.forEach(f => {
+  var div = document.createElement('div');
+  div.className = 'form-field';
+  var placeholder = f.placeholder ? ' placeholder="' + f.placeholder + '"' : '';
+  div.innerHTML = '<label>' + f.label + '</label>'
+    + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + '>';
+  grid.appendChild(div);
+});
 
+  
   container.appendChild(grid);
 }
 
@@ -1175,33 +1358,43 @@ function generatePropertyName() {
     var 권리금 = document.getElementById('f_권리금').value;
     if (권리금) parts.push('권리금' + Number(권리금).toLocaleString());
   }
-  else if (매물유형 === '주택') {
-    // [주택] 매물유형상세 지번 [건물명] [동] [호수] 전용평 거래유형 금액
-    if (매물유형상세) parts.push(매물유형상세);
-    if (지번) parts.push(지번);
+else if (매물유형 === '주택') {
+  // [주택] 매물유형상세 지번 [건물명] [동] [호수] 전용평 거래유형 금액
+  if (매물유형상세) parts.push(매물유형상세);
+  if (지번) parts.push(지번);
 
-var 건물명 = document.getElementById('f_건물명') ? document.getElementById('f_건물명').value.trim() : '';
-if (건물명) parts.push(건물명);
+  // 건물명
+  var 건물명 = document.getElementById('f_건물명') ? document.getElementById('f_건물명').value.trim() : '';
+  if (건물명) parts.push(건물명);
 
-var 해당동 = document.getElementById('f_해당동') ? document.getElementById('f_해당동').value.trim() : '';
-if (해당동) {
-  if (!해당동.endsWith('동')) 해당동 += '동';
-  parts.push(해당동);
-}
-
-var 호수 = document.getElementById('f_호수') ? document.getElementById('f_호수').value.trim() : '';
-if (호수) {
-  if (!호수.endsWith('호')) 호수 += '호';
-  parts.push(호수);
-}
-
-    var 전용2 = document.getElementById('f_전용') ? document.getElementById('f_전용').value : '';
-    var 평3 = sqmToPyeong(전용2);
-    if (평3) parts.push(평3 + '평');
-
-    var dealStr2 = formatDealPrice();
-    if (dealStr2) parts.push(dealStr2);
+  // ⭐ 해당동: "동" 자동 붙이기
+  var 해당동 = document.getElementById('f_해당동') ? document.getElementById('f_해당동').value.trim() : '';
+  if (해당동) {
+    // 이미 "동"으로 끝나면 그대로, 아니면 "동" 추가
+    if (!해당동.endsWith('동')) {
+      해당동 += '동';
+    }
+    parts.push(해당동);
   }
+
+  // ⭐ 호수: "호" 자동 붙이기
+  var 호수 = document.getElementById('f_호수') ? document.getElementById('f_호수').value.trim() : '';
+  if (호수) {
+    if (!호수.endsWith('호')) {
+      호수 += '호';
+    }
+    parts.push(호수);
+  }
+
+  // 전용면적
+  var 전용2 = document.getElementById('f_전용') ? document.getElementById('f_전용').value : '';
+  var 평3 = sqmToPyeong(전용2);
+  if (평3) parts.push(평3 + '평');
+
+  // 거래 금액
+  var dealStr2 = formatDealPrice();
+  if (dealStr2) parts.push(dealStr2);
+}
   else if (매물유형 === '공장창고') {
     // [공장창고] 매물유형상세 지번 [대지평] [연면적평] 거래유형 금액
     if (매물유형상세) parts.push(매물유형상세);
@@ -1347,7 +1540,17 @@ document.getElementById('btnGeocode').addEventListener('click', function() {
     status.className = 'geocode-status error';
     return;
   }
-
+  // ⭐ 여기에 추가 ⭐
+  // 소재지가 Locations 목록에 있는지 검증
+  var isValidLocation = allLocations.some(function(loc) {
+    return loc.Location === 소재지;
+  });
+  if (!isValidLocation) {
+    status.textContent = '⚠ 소재지를 목록에서 선택하세요 (현재: ' + 소재지 + ')';
+    status.className = 'geocode-status error';
+    return;
+  }
+  
   // 1차: Locations 캐시 조회 (지번주소로 정확한 값이 있으면 우선)
   var fullAddr = 지번주소 || 소재지;
 
