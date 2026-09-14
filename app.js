@@ -964,6 +964,177 @@ function renderTypeSpecificFields(type) {
 }
 
 // ============================================================
+// 📝 매물명 자동 생성
+// ============================================================
+
+// 평 변환 (1㎡ = 0.3025평)
+function sqmToPyeong(sqm) {
+  var n = parseFloat(sqm);
+  if (isNaN(n) || n <= 0) return '';
+  return (n * 0.3025).toFixed(1);
+}
+
+// 소재지 축약 (예: "제주시 해안동" → "해안동")
+function shortLocation(소재지) {
+  if (!소재지) return '';
+  // "제주시 해안동" → "해안동"
+  // "서귀포시 표선면 세화리" → "세화리"
+  var parts = 소재지.trim().split(/\s+/);
+  return parts[parts.length - 1];
+}
+
+// 지번 문자열 생성
+function buildJibunStr() {
+  var 소재지 = document.getElementById('f_소재지').value;
+  var 산 = document.getElementById('f_산').value;
+  var 본번 = document.getElementById('f_본번').value.trim();
+  var 부번 = document.getElementById('f_부번').value.trim();
+
+  var addr = shortLocation(소재지);
+  if (산) addr += ' 산';
+  if (본번) addr += ' ' + 본번;
+  if (부번) addr += '-' + 부번;
+  return addr;
+}
+
+// 금액 포맷
+function formatDealPrice() {
+  var deals = getSelectedDeals();
+  if (!deals.length) return '';
+
+  var d = deals[0]; // 첫 번째 거래만
+  var t = d.type;
+
+  if (t === '매매') {
+    var v = document.getElementById('f_매매가').value;
+    return v ? '매매 ' + Number(v).toLocaleString() + '만원' : '매매';
+  }
+  if (t === '전세') {
+    var v2 = document.getElementById('f_보증금_전세').value;
+    return v2 ? '전세 ' + Number(v2).toLocaleString() + '만원' : '전세';
+  }
+  if (t === '연세') {
+    var v3 = document.getElementById('f_연세').value;
+    return v3 ? '연세 ' + Number(v3).toLocaleString() + '만원' : '연세';
+  }
+  if (t === '월세') {
+    var b1 = document.getElementById('f_보증금_월세').value || '0';
+    var m1 = document.getElementById('f_월세').value || '0';
+    return '보증금' + Number(b1).toLocaleString() + '/월세' + Number(m1).toLocaleString();
+  }
+  if (t === '단기') {
+    var b2 = document.getElementById('f_보증금_단기').value || '0';
+    var m2 = document.getElementById('f_월세_단기').value || '0';
+    return '단기 보증금' + Number(b2).toLocaleString() + '/월세' + Number(m2).toLocaleString();
+  }
+  return '';
+}
+
+// 선택된 거래 목록
+function getSelectedDeals() {
+  var deals = [];
+  ['매매', '전세', '연세', '월세', '단기'].forEach(t => {
+    var cb = document.getElementById('deal_' + t);
+    if (cb && cb.checked) deals.push({ type: t });
+  });
+  return deals;
+}
+
+// ============================================================
+// 매물명 자동 생성 (핵심)
+// ============================================================
+function generatePropertyName() {
+  var 매물유형 = document.getElementById('f_매물유형').value;
+  var 매물유형상세 = document.getElementById('f_매물유형상세').value;
+  var 지번 = buildJibunStr();
+
+  if (!매물유형) return '';
+
+  var parts = ['[' + 매물유형 + ']'];
+
+  if (매물유형 === '토지') {
+    // [토지] 매물유형상세 지번 용도지역 면적평 매매가 평당가
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var 용도지역 = document.getElementById('f_용도지역').value;
+    if (용도지역) parts.push(용도지역);
+
+    var 대지 = document.getElementById('f_대지').value;
+    var 평 = sqmToPyeong(대지);
+    if (평) parts.push(평 + '평');
+
+    var 매매가 = document.getElementById('f_매매가').value;
+    if (매매가) {
+      parts.push(Number(매매가).toLocaleString() + '만원');
+
+      // 평당가 계산 (면적 있을 때)
+      if (평 && parseFloat(평) > 0) {
+        var 평당 = Math.round(Number(매매가) / parseFloat(평));
+        parts.push(평당.toLocaleString() + '만원/평');
+      }
+    }
+  }
+  else if (매물유형 === '상가') {
+    // [상가] 매물유형상세 지번 (보증금/월세 | 매매가) 전용평 [권리금]
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var dealStr = formatDealPrice();
+    if (dealStr) parts.push(dealStr);
+
+    var 전용 = document.getElementById('f_전용').value;
+    var 평2 = sqmToPyeong(전용);
+    if (평2) parts.push(평2 + '평');
+
+    var 권리금 = document.getElementById('f_권리금').value;
+    if (권리금) parts.push('권리금' + Number(권리금).toLocaleString());
+  }
+  else if (매물유형 === '주택') {
+    // [주택] 매물유형상세 지번 [건물명] [동] [호수] 전용평 거래유형 금액
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var 건물명 = document.getElementById('f_건물명') ? document.getElementById('f_건물명').value : '';
+    if (건물명) parts.push(건물명);
+
+    var 해당동 = document.getElementById('f_해당동') ? document.getElementById('f_해당동').value : '';
+    if (해당동) parts.push(해당동);
+
+    var 호수 = document.getElementById('f_호수') ? document.getElementById('f_호수').value : '';
+    if (호수) parts.push(호수);
+
+    var 전용2 = document.getElementById('f_전용') ? document.getElementById('f_전용').value : '';
+    var 평3 = sqmToPyeong(전용2);
+    if (평3) parts.push(평3 + '평');
+
+    var dealStr2 = formatDealPrice();
+    if (dealStr2) parts.push(dealStr2);
+  }
+  else if (매물유형 === '공장창고') {
+    // [공장창고] 매물유형상세 지번 [대지평] [연면적평] 거래유형 금액
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var 대지2 = document.getElementById('f_대지') ? document.getElementById('f_대지').value : '';
+    var 평4 = sqmToPyeong(대지2);
+    if (평4) parts.push('대지' + 평4 + '평');
+
+    var 연면적 = document.getElementById('f_연면적') ? document.getElementById('f_연면적').value : '';
+    var 평5 = sqmToPyeong(연면적);
+    if (평5) parts.push('연면적' + 평5 + '평');
+
+    var dealStr3 = formatDealPrice();
+    if (dealStr3) parts.push(dealStr3);
+  }
+
+  return parts.join(' ');
+}
+
+
+
+
+// ============================================================
 // 거래 조건 체크박스 토글
 // ============================================================
 document.querySelectorAll('.deal-check input[type="checkbox"]').forEach(cb => {
