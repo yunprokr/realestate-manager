@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -202,12 +202,14 @@
       <section class="form-section">
         <h3>위치</h3>
         <div class="form-grid">
-          <div class="form-field">
-            <label>소재지 <span class="req">*</span></label>
-            <select id="f_소재지">
-              <option value="">선택</option>
-            </select>
-          </div>
+        <div class="form-field location-combobox-wrapper">
+          <label>소재지 <span class="req">*</span></label>
+          <div class="combobox">
+            <input type="text" id="f_소재지" placeholder="타이핑하면 검색됩니다 (예: 해안)" autocomplete="off">
+            <button type="button" class="combobox-toggle" id="btnToggleLocation">▼</button>
+            <div class="combobox-dropdown hidden" id="locationDropdown"></div>
+        </div>
+      </div>
           <div class="form-field">
             <label>산</label>
             <select id="f_산">
