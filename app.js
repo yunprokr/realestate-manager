@@ -808,13 +808,12 @@ document.getElementById('closeAddModal').addEventListener('click', closeAddModal
 document.getElementById('btnCancelAdd').addEventListener('click', closeAddModal);
 
 function openAddModal() {
+  console.log('[openAddModal] 시작');
   resetAddForm();
   document.getElementById('addPropertyModal').classList.remove('hidden');
 
-  // Combobox 초기화 (최초 1회)
-  if (typeof initLocationCombobox === 'function' && !locationCombobox.input) {
-    initLocationCombobox();
-  }
+  // Combobox 초기화 (매번 호출 - 내부에서 중복 체크)
+  initLocationCombobox();
 
   document.getElementById('geocodeStatus').textContent = '';
 }
@@ -976,24 +975,31 @@ var locationCombobox = {
 };
 
 function initLocationCombobox() {
+  console.log('[Combobox] 초기화 시작');
+
   var input = document.getElementById('f_소재지');
   var dropdown = document.getElementById('locationDropdown');
   var toggleBtn = document.getElementById('btnToggleLocation');
 
+  if (!input || !dropdown || !toggleBtn) {
+    console.error('[Combobox] 필수 요소 없음', {input, dropdown, toggleBtn});
+    return;
+  }
+
+  // 이미 초기화됐으면 스킵
+  if (locationCombobox.input === input) {
+    console.log('[Combobox] 이미 초기화됨');
+    return;
+  }
+
   locationCombobox.input = input;
   locationCombobox.dropdown = dropdown;
-
-  // 초기값: 이미 선택된 값이 있으면 유지
-  // (매물 수정 시)
-  if (input.dataset.value) {
-    locationCombobox.selectedValue = input.dataset.value;
-  }
 
   // 입력 시 검색
   input.addEventListener('input', function() {
     var keyword = input.value.trim();
     filterAndShowLocations(keyword);
-    locationCombobox.selectedValue = ''; // 입력 중엔 선택 해제
+    locationCombobox.selectedValue = '';
   });
 
   // 포커스 시 드롭다운 열기
@@ -1040,6 +1046,7 @@ function initLocationCombobox() {
   // 토글 버튼
   toggleBtn.addEventListener('click', function(e) {
     e.stopPropagation();
+    e.preventDefault();
     if (dropdown.classList.contains('hidden')) {
       filterAndShowLocations(input.value.trim());
       input.focus();
@@ -1054,39 +1061,49 @@ function initLocationCombobox() {
       closeLocationDropdown();
     }
   });
+
+  console.log('[Combobox] 초기화 완료');
 }
 
 function filterAndShowLocations(keyword) {
-  var dropdown = locationCombobox.dropdown;
+  console.log('[Combobox] 필터:', keyword, '/ 전체 지역:', allLocations.length);
 
-  // 필터링
+  var dropdown = locationCombobox.dropdown;
+  if (!dropdown) return;
+
+  if (!allLocations || allLocations.length === 0) {
+    dropdown.innerHTML = '<div class="combobox-empty">지역 데이터 로드 중...</div>';
+    dropdown.classList.remove('hidden');
+    return;
+  }
+
   var filtered;
   if (!keyword) {
-    filtered = allLocations.slice(0, 100); // 전체 표시 (최대 100개)
+    filtered = allLocations.slice(0, 100);
   } else {
     var kw = keyword.toLowerCase();
-    filtered = allLocations.filter(loc => {
+    filtered = allLocations.filter(function(loc) {
       return (loc.Location || '').toLowerCase().indexOf(kw) !== -1;
     });
   }
 
+  console.log('[Combobox] 필터 결과:', filtered.length);
+
   locationCombobox.filteredItems = filtered;
   locationCombobox.highlightedIndex = -1;
 
-  // 렌더
   if (!filtered.length) {
     dropdown.innerHTML = '<div class="combobox-empty">검색 결과 없음</div>';
   } else {
     var html = '';
-    filtered.forEach((loc, i) => {
+    filtered.forEach(function(loc, i) {
       var selected = (loc.Location === locationCombobox.selectedValue) ? ' selected' : '';
       html += '<div class="combobox-item' + selected + '" data-index="' + i + '">'
             + escapeHtml(loc.Location) + '</div>';
     });
     dropdown.innerHTML = html;
 
-    // 클릭 이벤트
-    dropdown.querySelectorAll('.combobox-item').forEach(item => {
+    dropdown.querySelectorAll('.combobox-item').forEach(function(item) {
       item.addEventListener('click', function() {
         var idx = parseInt(this.dataset.index, 10);
         selectLocation(locationCombobox.filteredItems[idx]);
@@ -1103,7 +1120,7 @@ function filterAndShowLocations(keyword) {
 
 function updateHighlight() {
   var items = locationCombobox.dropdown.querySelectorAll('.combobox-item');
-  items.forEach((item, i) => {
+  items.forEach(function(item, i) {
     item.classList.toggle('highlighted', i === locationCombobox.highlightedIndex);
   });
 }
@@ -1117,20 +1134,22 @@ function scrollToHighlighted() {
 
 function selectLocation(loc) {
   if (!loc) return;
+  console.log('[Combobox] 선택:', loc.Location);
 
   locationCombobox.input.value = loc.Location;
   locationCombobox.selectedValue = loc.Location;
   locationCombobox.input.dataset.value = loc.Location;
   closeLocationDropdown();
 
-  // 매물명 자동 생성 트리거
   if (typeof autoGenerateName === 'function') {
     autoGenerateName();
   }
 }
 
 function closeLocationDropdown() {
-  locationCombobox.dropdown.classList.add('hidden');
+  if (locationCombobox.dropdown) {
+    locationCombobox.dropdown.classList.add('hidden');
+  }
   locationCombobox.highlightedIndex = -1;
 }
 
