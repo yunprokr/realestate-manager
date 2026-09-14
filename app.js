@@ -1180,14 +1180,20 @@ function generatePropertyName() {
     if (매물유형상세) parts.push(매물유형상세);
     if (지번) parts.push(지번);
 
-    var 건물명 = document.getElementById('f_건물명') ? document.getElementById('f_건물명').value : '';
-    if (건물명) parts.push(건물명);
+var 건물명 = document.getElementById('f_건물명') ? document.getElementById('f_건물명').value.trim() : '';
+if (건물명) parts.push(건물명);
 
-    var 해당동 = document.getElementById('f_해당동') ? document.getElementById('f_해당동').value : '';
-    if (해당동) parts.push(해당동);
+var 해당동 = document.getElementById('f_해당동') ? document.getElementById('f_해당동').value.trim() : '';
+if (해당동) {
+  if (!해당동.endsWith('동')) 해당동 += '동';
+  parts.push(해당동);
+}
 
-    var 호수 = document.getElementById('f_호수') ? document.getElementById('f_호수').value : '';
-    if (호수) parts.push(호수);
+var 호수 = document.getElementById('f_호수') ? document.getElementById('f_호수').value.trim() : '';
+if (호수) {
+  if (!호수.endsWith('호')) 호수 += '호';
+  parts.push(호수);
+}
 
     var 전용2 = document.getElementById('f_전용') ? document.getElementById('f_전용').value : '';
     var 평3 = sqmToPyeong(전용2);
