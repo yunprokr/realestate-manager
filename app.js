@@ -1,6 +1,3 @@
-네, 지금까지 반영된 모든 수정사항을 통합한 **app.js 최종버전**입니다. **파일 전체를 이 코드로 교체**하세요.
-
-```javascript
 // ============================================================
 // 전역
 // ============================================================
@@ -38,15 +35,11 @@ function getVal(id) {
   return el ? (el.value || '') : '';
 }
 
-function getEl(id) {
-  return document.getElementById(id);
-}
-
 // ============================================================
 // 인증
 // ============================================================
 document.getElementById('authBtn').addEventListener('click', tryAuth);
-document.getElementById('authEmail').addEventListener('keydown', e => {
+document.getElementById('authEmail').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') tryAuth();
 });
 
@@ -64,8 +57,8 @@ function tryAuth() {
   btn.textContent = '확인 중...';
 
   fetch(API_URL + '?action=ping&email=' + encodeURIComponent(email))
-    .then(r => r.json())
-    .then(res => {
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
       if (res.error === 'unauthorized') {
         msgEl.textContent = '⛔ 등록되지 않은 이메일입니다';
         btn.disabled = false; btn.textContent = '접속';
@@ -80,7 +73,7 @@ function tryAuth() {
       localStorage.setItem('authEmail', email);
       startApp();
     })
-    .catch(err => {
+    .catch(function(err) {
       msgEl.textContent = '네트워크 오류: ' + err.message;
       btn.disabled = false; btn.textContent = '접속';
     });
@@ -91,13 +84,16 @@ function tryAuth() {
   if (saved) {
     authEmail = saved;
     fetch(API_URL + '?action=ping&email=' + encodeURIComponent(saved))
-      .then(r => r.json())
-      .then(res => { if (!res.error) startApp(); else localStorage.removeItem('authEmail'); })
-      .catch(() => {});
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (!res.error) startApp();
+        else localStorage.removeItem('authEmail');
+      })
+      .catch(function() {});
   }
 })();
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
+document.getElementById('logoutBtn').addEventListener('click', function() {
   localStorage.removeItem('authEmail');
   location.reload();
 });
@@ -106,17 +102,17 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 // 카카오 SDK
 // ============================================================
 function loadKakaoSDK() {
-  return new Promise((resolve, reject) => {
+  return new Promise(function(resolve, reject) {
     if (window.kakao && kakao.maps) return resolve();
     var s = document.createElement('script');
     s.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + KAKAO_JS_KEY
           + '&libraries=clusterer&autoload=false';
     s.async = true;
-    s.onload = () => {
+    s.onload = function() {
       if (typeof kakao === 'undefined' || !kakao.maps) return reject('kakao 객체 없음');
       kakao.maps.load(resolve);
     };
-    s.onerror = () => reject('카카오 SDK 로드 실패');
+    s.onerror = function() { reject('카카오 SDK 로드 실패'); };
     document.head.appendChild(s);
   });
 }
@@ -130,7 +126,7 @@ function startApp() {
   showLoading(true, '데이터 로드 중...');
 
   Promise.all([loadKakaoSDK(), fetchAllData()])
-    .then(() => {
+    .then(function() {
       initMap();
       bindTabs();
       bindFilters();
@@ -139,7 +135,7 @@ function startApp() {
       renderMarkers();
       showLoading(false);
     })
-    .catch(err => {
+    .catch(function(err) {
       showLoading(false);
       alert('초기화 실패: ' + err);
       console.error(err);
@@ -149,8 +145,8 @@ function startApp() {
 function fetchAllData() {
   var url = API_URL + '?action=getAll&email=' + encodeURIComponent(authEmail);
   return fetch(url)
-    .then(r => r.json())
-    .then(data => {
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
       if (data.error) throw new Error(data.error);
       allProperties = data.properties || [];
       allCustomers  = data.customers  || [];
@@ -216,9 +212,9 @@ function initClusterer() {
 // ============================================================
 function bindTabs() {
   var tabs = document.querySelectorAll('.tab');
-  tabs.forEach(t => {
-    t.addEventListener('click', () => {
-      tabs.forEach(x => x.classList.remove('active'));
+  tabs.forEach(function(t) {
+    t.addEventListener('click', function() {
+      tabs.forEach(function(x) { x.classList.remove('active'); });
       t.classList.add('active');
       currentTab = t.dataset.tab;
       document.getElementById('propertyPane').classList.toggle('hidden', currentTab !== 'property');
@@ -234,22 +230,22 @@ function bindTabs() {
 // 필터
 // ============================================================
 function bindFilters() {
-  document.getElementById('filterType').addEventListener('change', () => {
+  document.getElementById('filterType').addEventListener('change', function() {
     updateTypeDetailDropdown();
     renderList(); renderMarkers();
   });
-  document.getElementById('filterTypeDetail').addEventListener('change', () => {
+  document.getElementById('filterTypeDetail').addEventListener('change', function() {
     renderList(); renderMarkers();
   });
-  document.getElementById('filterTrade').addEventListener('change', () => {
+  document.getElementById('filterTrade').addEventListener('change', function() {
     renderList(); renderMarkers();
   });
-  ['priceMin', 'priceMax'].forEach(id => {
-    document.getElementById(id).addEventListener('input', debounce(() => {
+  ['priceMin', 'priceMax'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', debounce(function() {
       renderList(); renderMarkers();
     }, 300));
   });
-  document.getElementById('searchInput').addEventListener('input', debounce(() => {
+  document.getElementById('searchInput').addEventListener('input', debounce(function() {
     renderList(); renderMarkers();
   }, 250));
 }
@@ -262,7 +258,7 @@ function updateTypeDetailDropdown() {
   detailSel.innerHTML = '<option value="">전체 상세</option>';
 
   if (type && TYPE_DETAIL_MAP[type]) {
-    TYPE_DETAIL_MAP[type].forEach(d => {
+    TYPE_DETAIL_MAP[type].forEach(function(d) {
       var opt = document.createElement('option');
       opt.value = d;
       opt.textContent = d;
@@ -283,7 +279,7 @@ function getFilteredProperties() {
   var maxP = parseFloat(document.getElementById('priceMax').value) || Infinity;
   var keyword = document.getElementById('searchInput').value.trim().toLowerCase();
 
-  return allProperties.filter(p => {
+  return allProperties.filter(function(p) {
     if (type && p.매물유형 !== type) return false;
     if (typeDetail && p.매물유형상세 !== typeDetail) return false;
     if (trade && p.거래유형 !== trade) return false;
@@ -329,14 +325,14 @@ function renderList() {
     return;
   }
 
-  filtered.sort((a, b) => {
+  filtered.sort(function(a, b) {
     var da = a.확인일 || a.등록일 || '';
     var db = b.확인일 || b.등록일 || '';
     return db.localeCompare(da);
   });
 
   var html = '';
-  filtered.forEach(p => {
+  filtered.forEach(function(p) {
     var ownerName = getOwnerName(p.고객ID);
     var priceText = formatPrice(p);
 
@@ -362,19 +358,19 @@ function renderList() {
   });
   container.innerHTML = html;
 
-  container.querySelectorAll('.listing-card').forEach(el => {
-    el.addEventListener('click', () => focusProperty(el.dataset.id));
+  container.querySelectorAll('.listing-card').forEach(function(el) {
+    el.addEventListener('click', function() { focusProperty(el.dataset.id); });
   });
 }
 
 function getOwnerName(customerId) {
   if (!customerId) return '';
-  var c = allCustomers.find(x => String(x.고객ID) === String(customerId));
+  var c = allCustomers.find(function(x) { return String(x.고객ID) === String(customerId); });
   return c ? (c.고객명 || '') : '';
 }
 
 // ============================================================
-// 마커 렌더 (줌 레벨별 하이브리드 + 동일 좌표 오프셋)
+// 마커 렌더
 // ============================================================
 function renderMarkers() {
   if (!map) return;
@@ -390,7 +386,7 @@ function renderMarkers() {
 
   if (useCluster) {
     var markersForCluster = [];
-    filtered.forEach(p => {
+    filtered.forEach(function(p) {
       if (!p.lat || !p.lng) return;
       var pos = new kakao.maps.LatLng(p.lat, p.lng);
       var marker = new kakao.maps.Marker({ position: pos, title: p.매물명 });
@@ -401,7 +397,7 @@ function renderMarkers() {
     clusterer.addMarkers(markersForCluster);
     clusterMarkers = markersForCluster;
 
-    markersForCluster.forEach(m => {
+    markersForCluster.forEach(function(m) {
       kakao.maps.event.addListener(m, 'click', function() {
         focusProperty(m._propertyId);
       });
@@ -409,7 +405,7 @@ function renderMarkers() {
   } else {
     var positioned = offsetDuplicateCoords(filtered);
 
-    positioned.forEach(item => {
+    positioned.forEach(function(item) {
       var p = item.property;
       var pos = new kakao.maps.LatLng(item.lat, item.lng);
 
@@ -424,7 +420,7 @@ function renderMarkers() {
         content.textContent = formatPriceShort(p) + ' ·' + item.groupIndex;
       }
 
-      content.addEventListener('click', (e) => {
+      content.addEventListener('click', function(e) {
         e.stopPropagation();
         focusProperty(p.매물ID);
       });
@@ -453,14 +449,14 @@ function offsetDuplicateCoords(properties) {
   var coordMap = {};
   var result = [];
 
-  properties.forEach(p => {
+  properties.forEach(function(p) {
     if (!p.lat || !p.lng) return;
     var key = p.lat.toFixed(6) + ',' + p.lng.toFixed(6);
     if (!coordMap[key]) coordMap[key] = [];
     coordMap[key].push(p);
   });
 
-  Object.keys(coordMap).forEach(key => {
+  Object.keys(coordMap).forEach(function(key) {
     var group = coordMap[key];
 
     if (group.length === 1) {
@@ -475,7 +471,7 @@ function offsetDuplicateCoords(properties) {
       var radius = 0.00012;
       var count = group.length;
 
-      group.forEach((p, i) => {
+      group.forEach(function(p, i) {
         var angle = (2 * Math.PI / count) * i - Math.PI / 2;
         var offsetLat = p.lat + (radius * Math.cos(angle));
         var offsetLng = p.lng + (radius * Math.sin(angle) / Math.cos(p.lat * Math.PI / 180));
@@ -495,7 +491,7 @@ function offsetDuplicateCoords(properties) {
 }
 
 function clearIndividualMarkers() {
-  individualMarkers.forEach(m => {
+  individualMarkers.forEach(function(m) {
     if (m._overlay) m._overlay.setMap(null);
   });
   individualMarkers = [];
@@ -507,11 +503,11 @@ function clearIndividualMarkers() {
 function focusProperty(id) {
   selectedId = id;
 
-  document.querySelectorAll('.listing-card').forEach(c => {
+  document.querySelectorAll('.listing-card').forEach(function(c) {
     c.classList.toggle('active', c.dataset.id === id);
   });
 
-  var p = allProperties.find(x => x.매물ID === id);
+  var p = allProperties.find(function(x) { return x.매물ID === id; });
   if (!p) return;
 
   var isMobile = window.innerWidth <= 1023;
@@ -519,7 +515,7 @@ function focusProperty(id) {
   else showDetailPanel(p);
 
   if (p.lat && p.lng) {
-    var m = individualMarkers.find(x => x._propertyId === id);
+    var m = individualMarkers.find(function(x) { return x._propertyId === id; });
     var lat = (m && m._lat) ? m._lat : p.lat;
     var lng = (m && m._lng) ? m._lng : p.lng;
 
@@ -531,11 +527,11 @@ function focusProperty(id) {
     }, 230);
   }
 
-  individualMarkers.forEach(mk => {
+  individualMarkers.forEach(function(mk) {
     var el = mk._overlay && mk._overlay.getContent ? mk._overlay.getContent() : null;
     if (el && el.classList) el.classList.remove('active');
   });
-  var m2 = individualMarkers.find(x => x._propertyId === id);
+  var m2 = individualMarkers.find(function(x) { return x._propertyId === id; });
   if (m2 && m2._overlay) {
     var el2 = m2._overlay.getContent ? m2._overlay.getContent() : null;
     if (el2 && el2.classList) el2.classList.add('active');
@@ -575,13 +571,13 @@ function showBottomSheet(p) {
 }
 
 function bindDetailClose() {
-  document.getElementById('detailClosePC').addEventListener('click', () => {
+  document.getElementById('detailClosePC').addEventListener('click', function() {
     document.getElementById('detailPanel').classList.add('hidden');
     setTimeout(function() {
       if (map) map.relayout();
     }, 220);
   });
-  document.getElementById('detailCloseMobile').addEventListener('click', () => {
+  document.getElementById('detailCloseMobile').addEventListener('click', function() {
     document.getElementById('bottomSheet').classList.add('hidden');
     setTimeout(function() {
       if (map) map.relayout();
@@ -799,16 +795,16 @@ function closeAddModal() {
 
 function resetAddForm() {
   var modal = document.getElementById('addPropertyModal');
-  modal.querySelectorAll('input[type="text"], input[type="number"], input[type="url"], textarea').forEach(el => {
+  modal.querySelectorAll('input[type="text"], input[type="number"], input[type="url"], textarea').forEach(function(el) {
     el.value = '';
   });
-  modal.querySelectorAll('input[type="checkbox"]').forEach(el => {
+  modal.querySelectorAll('input[type="checkbox"]').forEach(function(el) {
     el.checked = false;
   });
-  modal.querySelectorAll('select').forEach(el => {
+  modal.querySelectorAll('select').forEach(function(el) {
     el.selectedIndex = 0;
   });
-  modal.querySelectorAll('.deal-inputs input').forEach(el => {
+  modal.querySelectorAll('.deal-inputs input').forEach(function(el) {
     el.disabled = true;
   });
 
@@ -828,4 +824,869 @@ function resetAddForm() {
     locationCombobox.input.dataset.value = '';
     locationCombobox.selectedValue = '';
     if (typeof closeLocationDropdown === 'function') {
-      close
+      closeLocationDropdown();
+    }
+  }
+
+  if (typeof propertyNameManuallyEdited !== 'undefined') {
+    propertyNameManuallyEdited = false;
+  }
+
+  var hint = document.getElementById('nameHint');
+  if (hint) {
+    hint.textContent = '';
+    hint.className = 'field-hint';
+  }
+}
+
+// ============================================================
+// 매물명 자동 생성 트리거
+// ============================================================
+var propertyNameManuallyEdited = false;
+
+var nameField = document.getElementById('f_매물명');
+if (nameField) {
+  nameField.addEventListener('input', function() {
+    propertyNameManuallyEdited = true;
+    updateNameHint();
+  });
+}
+
+var btnGen = document.getElementById('btnGenerateName');
+if (btnGen) {
+  btnGen.addEventListener('click', function() {
+    var name = generatePropertyName();
+    if (!name) {
+      alert('매물유형, 소재지 등 필수 정보를 먼저 입력하세요');
+      return;
+    }
+    if (propertyNameManuallyEdited) {
+      if (!confirm('매물명이 수정되었습니다. 자동 생성으로 덮어쓸까요?')) {
+        return;
+      }
+    }
+    document.getElementById('f_매물명').value = name;
+    propertyNameManuallyEdited = false;
+    updateNameHint();
+  });
+}
+
+document.querySelectorAll('.deal-check input[type="checkbox"]').forEach(function(cb) {
+  cb.addEventListener('change', autoGenerateName);
+});
+
+function autoGenerateName() {
+  if (propertyNameManuallyEdited) return;
+
+  var name = generatePropertyName();
+  if (name) {
+    document.getElementById('f_매물명').value = name;
+    updateNameHint();
+  }
+}
+
+function updateNameHint() {
+  var hint = document.getElementById('nameHint');
+  if (!hint) return;
+
+  if (propertyNameManuallyEdited) {
+    hint.textContent = '⚠ 수동 수정됨 · 자동 생성하려면 🔄 버튼 클릭';
+    hint.className = 'field-hint warning';
+  } else if (document.getElementById('f_매물명').value) {
+    hint.textContent = '✓ 자동 생성됨';
+    hint.className = 'field-hint success';
+  } else {
+    hint.textContent = '';
+    hint.className = 'field-hint';
+  }
+}
+
+function bindNameGenerationTriggers() {
+  var ids = [
+    'f_매물유형', 'f_매물유형상세', 'f_소재지', 'f_산', 'f_본번', 'f_부번',
+    'f_용도지역', 'f_지구구역', 'f_대지', 'f_전용', 'f_공급', 'f_연면적',
+    'f_건물명', 'f_해당동', 'f_호수',
+    'f_매매가', 'f_보증금_전세', 'f_연세', 'f_보증금_월세', 'f_월세',
+    'f_보증금_단기', 'f_월세_단기', 'f_권리금'
+  ];
+
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.dataset.nameTriggerBound === '1') return;
+    el.dataset.nameTriggerBound = '1';
+
+    el.addEventListener('change', autoGenerateName);
+    el.addEventListener('input', debounce(autoGenerateName, 400));
+  });
+}
+
+// ============================================================
+// 소재지 Combobox
+// ============================================================
+var locationCombobox = {
+  input: null,
+  dropdown: null,
+  highlightedIndex: -1,
+  filteredItems: [],
+  selectedValue: ''
+};
+
+function initLocationCombobox() {
+  var input = document.getElementById('f_소재지');
+  var dropdown = document.getElementById('locationDropdown');
+  var toggleBtn = document.getElementById('btnToggleLocation');
+
+  if (!input || !dropdown || !toggleBtn) return;
+  if (locationCombobox.input === input) return;
+
+  locationCombobox.input = input;
+  locationCombobox.dropdown = dropdown;
+
+  input.addEventListener('input', function() {
+    var keyword = input.value.trim();
+    filterAndShowLocations(keyword);
+    locationCombobox.selectedValue = '';
+  });
+
+  input.addEventListener('focus', function() {
+    filterAndShowLocations(input.value.trim());
+  });
+
+  input.addEventListener('keydown', function(e) {
+    if (dropdown.classList.contains('hidden')) {
+      if (e.key === 'ArrowDown') {
+        filterAndShowLocations(input.value.trim());
+        e.preventDefault();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      locationCombobox.highlightedIndex++;
+      if (locationCombobox.highlightedIndex >= locationCombobox.filteredItems.length) {
+        locationCombobox.highlightedIndex = 0;
+      }
+      updateHighlight();
+      scrollToHighlighted();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      locationCombobox.highlightedIndex--;
+      if (locationCombobox.highlightedIndex < 0) {
+        locationCombobox.highlightedIndex = locationCombobox.filteredItems.length - 1;
+      }
+      updateHighlight();
+      scrollToHighlighted();
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (locationCombobox.highlightedIndex >= 0) {
+        selectLocation(locationCombobox.filteredItems[locationCombobox.highlightedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      closeLocationDropdown();
+    }
+  });
+
+  toggleBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (dropdown.classList.contains('hidden')) {
+      filterAndShowLocations(input.value.trim());
+      input.focus();
+    } else {
+      closeLocationDropdown();
+    }
+  });
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.location-combobox-wrapper')) {
+      closeLocationDropdown();
+    }
+  });
+}
+
+function filterAndShowLocations(keyword) {
+  var dropdown = locationCombobox.dropdown;
+  if (!dropdown) return;
+
+  if (!allLocations || allLocations.length === 0) {
+    dropdown.innerHTML = '<div class="combobox-empty">지역 데이터 로드 중...</div>';
+    dropdown.classList.remove('hidden');
+    return;
+  }
+
+  var filtered;
+  if (!keyword) {
+    filtered = allLocations.slice(0, 100);
+  } else {
+    var kw = keyword.toLowerCase();
+    filtered = allLocations.filter(function(loc) {
+      return (loc.Location || '').toLowerCase().indexOf(kw) !== -1;
+    });
+  }
+
+  locationCombobox.filteredItems = filtered;
+  locationCombobox.highlightedIndex = -1;
+
+  if (!filtered.length) {
+    dropdown.innerHTML = '<div class="combobox-empty">검색 결과 없음</div>';
+  } else {
+    var html = '';
+    filtered.forEach(function(loc, i) {
+      var selected = (loc.Location === locationCombobox.selectedValue) ? ' selected' : '';
+      html += '<div class="combobox-item' + selected + '" data-index="' + i + '">'
+            + escapeHtml(loc.Location) + '</div>';
+    });
+    dropdown.innerHTML = html;
+
+    dropdown.querySelectorAll('.combobox-item').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var idx = parseInt(this.dataset.index, 10);
+        selectLocation(locationCombobox.filteredItems[idx]);
+      });
+      item.addEventListener('mouseenter', function() {
+        locationCombobox.highlightedIndex = parseInt(this.dataset.index, 10);
+        updateHighlight();
+      });
+    });
+  }
+
+  dropdown.classList.remove('hidden');
+}
+
+function updateHighlight() {
+  var items = locationCombobox.dropdown.querySelectorAll('.combobox-item');
+  items.forEach(function(item, i) {
+    item.classList.toggle('highlighted', i === locationCombobox.highlightedIndex);
+  });
+}
+
+function scrollToHighlighted() {
+  var items = locationCombobox.dropdown.querySelectorAll('.combobox-item');
+  if (locationCombobox.highlightedIndex >= 0 && items[locationCombobox.highlightedIndex]) {
+    items[locationCombobox.highlightedIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function selectLocation(loc) {
+  if (!loc) return;
+
+  locationCombobox.input.value = loc.Location;
+  locationCombobox.selectedValue = loc.Location;
+  locationCombobox.input.dataset.value = loc.Location;
+  closeLocationDropdown();
+
+  if (typeof autoGenerateName === 'function') {
+    autoGenerateName();
+  }
+}
+
+function closeLocationDropdown() {
+  if (locationCombobox.dropdown) {
+    locationCombobox.dropdown.classList.add('hidden');
+  }
+  locationCombobox.highlightedIndex = -1;
+}
+
+// ============================================================
+// 매물유형 변경 시 상세 드롭다운 + 조건부 필드
+// ============================================================
+var typeSelect = document.getElementById('f_매물유형');
+if (typeSelect) {
+  typeSelect.addEventListener('change', function() {
+    var type = this.value;
+
+    var detailSel = document.getElementById('f_매물유형상세');
+    detailSel.innerHTML = '<option value="">선택</option>';
+    if (type && TYPE_DETAIL_MAP[type]) {
+      TYPE_DETAIL_MAP[type].forEach(function(d) {
+        var opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        detailSel.appendChild(opt);
+      });
+    }
+
+    renderTypeSpecificFields(type);
+  });
+}
+
+// ============================================================
+// 매물유형별 조건부 필드 렌더링
+// ============================================================
+function renderTypeSpecificFields(type) {
+  var container = document.getElementById('typeSpecificFields');
+  container.innerHTML = '';
+
+  if (!type) {
+    container.innerHTML = '<div class="empty-hint">매물유형을 선택하면 해당 필드가 나타납니다.</div>';
+    return;
+  }
+
+  var fields = [];
+  var grid = document.createElement('div');
+  grid.className = 'form-grid';
+
+  if (type === '토지') {
+    fields = [
+      { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
+      { id: 'f_용도지역', label: '용도지역', type: 'text' },
+      { id: 'f_지구구역', label: '지구.구역', type: 'text' }
+    ];
+  } else if (type === '상가') {
+    fields = [
+      { id: 'f_연면적', label: '연면적 (㎡)', type: 'number' },
+      { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
+      { id: 'f_해당층총층', label: '해당층/총층', type: 'text' },
+      { id: 'f_현업종', label: '현업종', type: 'text' },
+      { id: 'f_추천업종', label: '추천업종', type: 'text' },
+      { id: 'f_임대현황', label: '임대현황', type: 'text' }
+    ];
+  } else if (type === '공장창고') {
+    fields = [
+      { id: 'f_연면적', label: '연면적 (㎡)', type: 'number' },
+      { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
+      { id: 'f_사용전력', label: '사용전력 (kW)', type: 'number' },
+      { id: 'f_층고', label: '층고 (m)', type: 'number' },
+      { id: 'f_용도지역', label: '용도지역', type: 'text' }
+    ];
+  } else if (type === '주택') {
+    fields = [
+      { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
+      { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
+      { id: 'f_공급', label: '공급 (㎡)', type: 'number' },
+      { id: 'f_방', label: '방', type: 'number' },
+      { id: 'f_욕실', label: '욕실', type: 'number' },
+      { id: 'f_건축물용도', label: '건축물용도', type: 'text', placeholder: '예: 다세대주택' },
+      { id: 'f_건물명', label: '건물명', type: 'text', placeholder: '예: 마크힐노형' },
+      { id: 'f_해당동', label: '해당동', type: 'text', placeholder: '숫자만 (예: 102)' },
+      { id: 'f_호수', label: '호수', type: 'text', placeholder: '숫자만 (예: 401)' },
+      { id: 'f_해당층총층', label: '해당층/총층', type: 'text', placeholder: '예: 4층/총4층' },
+      { id: 'f_방향', label: '방향', type: 'text', placeholder: '예: 남서향' },
+      { id: 'f_주차', label: '주차', type: 'text' },
+      { id: 'f_세대수', label: '세대수', type: 'number' },
+      { id: 'f_사용승인일', label: '사용승인일', type: 'date' },
+      { id: 'f_특수구조', label: '특수구조 (복층/다락)', type: 'text' },
+      { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
+      { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
+      { id: 'f_엘리베이터', label: '엘리베이터', type: 'text' }
+    ];
+  }
+
+  fields.forEach(function(f) {
+    var div = document.createElement('div');
+    div.className = 'form-field';
+    var placeholder = f.placeholder ? ' placeholder="' + f.placeholder + '"' : '';
+    div.innerHTML = '<label>' + f.label + '</label>'
+      + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + '>';
+    grid.appendChild(div);
+  });
+
+  container.appendChild(grid);
+
+  bindNameGenerationTriggers();
+}
+
+// ============================================================
+// 매물명 자동 생성
+// ============================================================
+function sqmToPyeong(sqm) {
+  var n = parseFloat(sqm);
+  if (isNaN(n) || n <= 0) return '';
+  return (n * 0.3025).toFixed(1);
+}
+
+function shortLocation(소재지) {
+  if (!소재지) return '';
+  var parts = 소재지.trim().split(/\s+/);
+  return parts[parts.length - 1];
+}
+
+function buildJibunStr() {
+  var 소재지 = getVal('f_소재지');
+  var 산 = getVal('f_산');
+  var 본번 = getVal('f_본번').trim();
+  var 부번 = getVal('f_부번').trim();
+
+  var addr = shortLocation(소재지);
+  if (산) addr += ' 산';
+  if (본번) addr += ' ' + 본번;
+  if (부번) addr += '-' + 부번;
+  return addr;
+}
+
+function formatDealPrice() {
+  var deals = getSelectedDeals();
+  if (!deals.length) return '';
+
+  var d = deals[0];
+  var t = d.type;
+
+  if (t === '매매') {
+    var v = getVal('f_매매가');
+    return v ? '매매 ' + Number(v).toLocaleString() + '만원' : '매매';
+  }
+  if (t === '전세') {
+    var v2 = getVal('f_보증금_전세');
+    return v2 ? '전세 ' + Number(v2).toLocaleString() + '만원' : '전세';
+  }
+  if (t === '연세') {
+    var v3 = getVal('f_연세');
+    return v3 ? '연세 ' + Number(v3).toLocaleString() + '만원' : '연세';
+  }
+  if (t === '월세') {
+    var b1 = getVal('f_보증금_월세') || '0';
+    var m1 = getVal('f_월세') || '0';
+    return '보증금' + Number(b1).toLocaleString() + '/월세' + Number(m1).toLocaleString();
+  }
+  if (t === '단기') {
+    var b2 = getVal('f_보증금_단기') || '0';
+    var m2 = getVal('f_월세_단기') || '0';
+    return '단기 보증금' + Number(b2).toLocaleString() + '/월세' + Number(m2).toLocaleString();
+  }
+  return '';
+}
+
+function getSelectedDeals() {
+  var deals = [];
+  ['매매', '전세', '연세', '월세', '단기'].forEach(function(t) {
+    var cb = document.getElementById('deal_' + t);
+    if (cb && cb.checked) deals.push({ type: t });
+  });
+  return deals;
+}
+
+function generatePropertyName() {
+  var 매물유형 = getVal('f_매물유형');
+  var 매물유형상세 = getVal('f_매물유형상세');
+  var 지번 = buildJibunStr();
+
+  if (!매물유형) return '';
+
+  var parts = ['[' + 매물유형 + ']'];
+
+  if (매물유형 === '토지') {
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var 용도지역 = getVal('f_용도지역');
+    if (용도지역) parts.push(용도지역);
+
+    var 대지 = getVal('f_대지');
+    var 평 = sqmToPyeong(대지);
+    if (평) parts.push(평 + '평');
+
+    var 매매가 = getVal('f_매매가');
+    if (매매가) {
+      parts.push(Number(매매가).toLocaleString() + '만원');
+      if (평 && parseFloat(평) > 0) {
+        var 평당 = Math.round(Number(매매가) / parseFloat(평));
+        parts.push(평당.toLocaleString() + '만원/평');
+      }
+    }
+  }
+  else if (매물유형 === '상가') {
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var dealStr = formatDealPrice();
+    if (dealStr) parts.push(dealStr);
+
+    var 전용 = getVal('f_전용');
+    var 평2 = sqmToPyeong(전용);
+    if (평2) parts.push(평2 + '평');
+
+    var 권리금 = getVal('f_권리금');
+    if (권리금) parts.push('권리금' + Number(권리금).toLocaleString());
+  }
+  else if (매물유형 === '주택') {
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var 건물명 = getVal('f_건물명').trim();
+    if (건물명) parts.push(건물명);
+
+    var 해당동 = getVal('f_해당동').trim();
+    if (해당동) {
+      if (!해당동.endsWith('동')) 해당동 += '동';
+      parts.push(해당동);
+    }
+
+    var 호수 = getVal('f_호수').trim();
+    if (호수) {
+      if (!호수.endsWith('호')) 호수 += '호';
+      parts.push(호수);
+    }
+
+    var 전용2 = getVal('f_전용');
+    var 평3 = sqmToPyeong(전용2);
+    if (평3) parts.push(평3 + '평');
+
+    var dealStr2 = formatDealPrice();
+    if (dealStr2) parts.push(dealStr2);
+  }
+  else if (매물유형 === '공장창고') {
+    if (매물유형상세) parts.push(매물유형상세);
+    if (지번) parts.push(지번);
+
+    var 대지2 = getVal('f_대지');
+    var 평4 = sqmToPyeong(대지2);
+    if (평4) parts.push('대지' + 평4 + '평');
+
+    var 연면적 = getVal('f_연면적');
+    var 평5 = sqmToPyeong(연면적);
+    if (평5) parts.push('연면적' + 평5 + '평');
+
+    var dealStr3 = formatDealPrice();
+    if (dealStr3) parts.push(dealStr3);
+  }
+
+  return parts.join(' ');
+}
+
+// ============================================================
+// 거래 조건 체크박스 토글
+// ============================================================
+document.querySelectorAll('.deal-check input[type="checkbox"]').forEach(function(cb) {
+  cb.addEventListener('change', function() {
+    var row = this.closest('.deal-row');
+    var inputs = row.querySelectorAll('.deal-inputs input');
+    inputs.forEach(function(inp) {
+      inp.disabled = !this.checked;
+      if (!this.checked) inp.value = '';
+    }, this);
+  });
+});
+
+// ============================================================
+// 고객 검색
+// ============================================================
+var btnSearchCustomer = document.getElementById('btnSearchCustomer');
+if (btnSearchCustomer) {
+  btnSearchCustomer.addEventListener('click', searchCustomer);
+}
+
+var fCustomerSearch = document.getElementById('f_customerSearch');
+if (fCustomerSearch) {
+  fCustomerSearch.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      searchCustomer();
+    }
+  });
+}
+
+function searchCustomer() {
+  var keyword = document.getElementById('f_customerSearch').value.trim();
+  if (!keyword) {
+    alert('검색어를 입력하세요');
+    return;
+  }
+
+  var resultsEl = document.getElementById('customerSearchResults');
+  resultsEl.innerHTML = '<div class="search-result-item">검색 중...</div>';
+  resultsEl.classList.remove('hidden');
+
+  var url = API_URL + '?action=searchCustomers'
+          + '&keyword=' + encodeURIComponent(keyword)
+          + '&email=' + encodeURIComponent(authEmail);
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) throw new Error(data.error);
+      var list = data.results || [];
+      if (!list.length) {
+        resultsEl.innerHTML = '<div class="search-result-item">검색 결과 없음</div>';
+        return;
+      }
+      resultsEl.innerHTML = '';
+      list.forEach(function(c) {
+        var item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.innerHTML = '<div class="name">' + escapeHtml(c.고객명 || '이름없음')
+          + ' <span style="font-size:11px;color:#4A90E2;">[' + escapeHtml(c.고객유형 || '') + ']</span></div>'
+          + '<div class="meta">' + escapeHtml(c.연락처 || '') + ' · ' + escapeHtml(c.거래유형 || '') + '</div>';
+        item.addEventListener('click', function() {
+          selectCustomer(c);
+        });
+        resultsEl.appendChild(item);
+      });
+    })
+    .catch(function(err) {
+      resultsEl.innerHTML = '<div class="search-result-item">오류: ' + escapeHtml(err.message) + '</div>';
+    });
+}
+
+function selectCustomer(c) {
+  document.getElementById('f_고객ID').value = c.고객ID || '';
+  document.getElementById('selectedCustomerInfo').textContent =
+    (c.고객명 || '') + ' (' + (c.연락처 || '연락처 없음') + ')';
+  document.getElementById('selectedCustomer').classList.remove('hidden');
+  document.getElementById('customerSearchResults').classList.add('hidden');
+  document.getElementById('newCustomerForm').classList.add('hidden');
+}
+
+var btnClearCustomer = document.getElementById('btnClearCustomer');
+if (btnClearCustomer) {
+  btnClearCustomer.addEventListener('click', function() {
+    document.getElementById('f_고객ID').value = '';
+    document.getElementById('selectedCustomer').classList.add('hidden');
+  });
+}
+
+var btnNewCustomer = document.getElementById('btnNewCustomer');
+if (btnNewCustomer) {
+  btnNewCustomer.addEventListener('click', function() {
+    var form = document.getElementById('newCustomerForm');
+    var isHidden = form.classList.contains('hidden');
+    form.classList.toggle('hidden', !isHidden);
+    document.getElementById('selectedCustomer').classList.add('hidden');
+    document.getElementById('customerSearchResults').classList.add('hidden');
+    if (isHidden) {
+      document.getElementById('f_고객ID').value = '';
+      setTimeout(function() { bindPhoneFormat(); }, 50);
+    }
+  });
+}
+
+// ============================================================
+// 좌표 자동 조회
+// ============================================================
+var btnGeocode = document.getElementById('btnGeocode');
+if (btnGeocode) {
+  btnGeocode.addEventListener('click', function() {
+    var 소재지 = getVal('f_소재지');
+    var 산 = getVal('f_산');
+    var 본번 = getVal('f_본번').trim();
+    var 부번 = getVal('f_부번').trim();
+
+    var status = document.getElementById('geocodeStatus');
+
+    var 지번주소 = '';
+    if (소재지) {
+      지번주소 = 소재지;
+      if (산) 지번주소 += ' 산';
+      if (본번) 지번주소 += ' ' + 본번;
+      if (부번) 지번주소 += '-' + 부번;
+    }
+    document.getElementById('f_지번주소').value = 지번주소;
+
+    if (!소재지) {
+      status.textContent = '소재지를 선택하세요';
+      status.className = 'geocode-status error';
+      return;
+    }
+
+    var isValidLocation = allLocations.some(function(loc) {
+      return loc.Location === 소재지;
+    });
+    if (!isValidLocation) {
+      status.textContent = '⚠ 소재지를 목록에서 선택하세요 (현재: ' + 소재지 + ')';
+      status.className = 'geocode-status error';
+      return;
+    }
+
+    var fullAddr = 지번주소 || 소재지;
+
+    status.textContent = '조회 중...';
+    status.className = 'geocode-status';
+
+    var url = API_URL + '?action=geocodeAddress'
+            + '&address=' + encodeURIComponent(fullAddr)
+            + '&email=' + encodeURIComponent(authEmail);
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) {
+          status.textContent = '조회 실패: ' + data.error;
+          status.className = 'geocode-status error';
+          return;
+        }
+        var coordStr = data.lat + ',' + data.lng;
+        document.getElementById('f_좌표').value = coordStr;
+        status.textContent = '✓ 조회 완료 (' + (data.source || 'kakao') + ')';
+        status.className = 'geocode-status success';
+      })
+      .catch(function(err) {
+        status.textContent = '오류: ' + err.message;
+        status.className = 'geocode-status error';
+      });
+  });
+}
+
+// ============================================================
+// 저장
+// ============================================================
+var btnSaveAdd = document.getElementById('btnSaveAdd');
+if (btnSaveAdd) {
+  btnSaveAdd.addEventListener('click', function() {
+    var btn = this;
+
+    var 매물명 = getVal('f_매물명').trim();
+    var 매물유형 = getVal('f_매물유형');
+    var 소재지 = getVal('f_소재지');
+    var 좌표 = getVal('f_좌표').trim();
+
+    if (!매물명) { alert('매물명을 입력하세요'); return; }
+    if (!매물유형) { alert('매물유형을 선택하세요'); return; }
+    if (!소재지) { alert('소재지를 선택하세요'); return; }
+    if (!좌표) { alert('좌표 자동 조회를 먼저 실행하세요'); return; }
+
+    var 고객ID = getVal('f_고객ID');
+    var 신규고객 = false;
+    var 신규고객명 = '';
+
+    if (!고객ID) {
+      var newForm = document.getElementById('newCustomerForm');
+      if (!newForm.classList.contains('hidden')) {
+        신규고객명 = getVal('f_신규고객명').trim();
+        if (!신규고객명) { alert('신규 고객명을 입력하세요'); return; }
+        신규고객 = true;
+      } else {
+        alert('소유주를 선택하거나 신규 등록하세요');
+        return;
+      }
+    }
+
+    var dealTypes = [];
+    ['매매', '전세', '연세', '월세', '단기'].forEach(function(t) {
+      var cb = document.getElementById('deal_' + t);
+      if (cb && cb.checked) dealTypes.push(t);
+    });
+
+    if (!dealTypes.length) {
+      alert('거래 조건을 1개 이상 선택하세요');
+      return;
+    }
+
+    var params = {};
+
+    params['매물명'] = 매물명;
+    params['매물유형'] = 매물유형;
+    params['매물유형상세'] = getVal('f_매물유형상세');
+    params['매물상태'] = getVal('f_매물상태');
+
+    params['소재지'] = 소재지;
+    params['산'] = getVal('f_산');
+    params['본번'] = getVal('f_본번').trim();
+    params['부번'] = getVal('f_부번').trim();
+    params['지번주소'] = getVal('f_지번주소');
+    params['좌표'] = 좌표;
+    params['추가필지'] = '';
+
+    params['고객ID'] = 고객ID;
+    if (신규고객) {
+      params['신규고객'] = 'true';
+      params['신규고객명'] = 신규고객명;
+      params['신규고객연락처'] = getVal('f_신규고객연락처');
+      params['신규고객유형'] = getVal('f_신규고객유형');
+      params['신규고객거래유형'] = getVal('f_신규고객거래유형');
+    }
+
+    var mainDeal = dealTypes[0];
+    params['거래유형'] = mainDeal;
+
+    if (mainDeal === '매매') {
+      params['매매가'] = getVal('f_매매가');
+    } else if (mainDeal === '전세') {
+      params['보증금'] = getVal('f_보증금_전세');
+    } else if (mainDeal === '연세') {
+      params['연세'] = getVal('f_연세');
+    } else if (mainDeal === '월세') {
+      params['보증금'] = getVal('f_보증금_월세');
+      params['월세'] = getVal('f_월세');
+    } else if (mainDeal === '단기') {
+      params['보증금'] = getVal('f_보증금_단기');
+      params['월세'] = getVal('f_월세_단기');
+    }
+
+    params['관리비'] = getVal('f_관리비');
+    params['권리금'] = getVal('f_권리금');
+
+    ['f_대지', 'f_용도지역', 'f_지구구역', 'f_연면적', 'f_전용', 'f_공급', 'f_해당층총층',
+     'f_현업종', 'f_추천업종', 'f_임대현황', 'f_사용전력', 'f_층고',
+     'f_방', 'f_욕실', 'f_건축물용도', 'f_건물명', 'f_해당동', 'f_호수',
+     'f_방향', 'f_주차', 'f_세대수', 'f_사용승인일', 'f_특수구조', 'f_특수구조상세',
+     'f_반려동물', 'f_엘리베이터'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) {
+        var key = id.replace('f_', '');
+        var keyMap = {
+          '특수구조상세': '특수구조(상세)',
+          '지구구역': '지구.구역',
+          '해당층총층': '해당층/총층'
+        };
+        params[keyMap[key] || key] = el.value;
+      }
+    });
+
+    params['블로그링크'] = getVal('f_블로그링크');
+    params['내용'] = getVal('f_내용');
+
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+
+    var queryString = Object.keys(params).map(function(k) {
+      return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    }).join('&');
+
+    var url = API_URL + '?action=addProperty&email=' + encodeURIComponent(authEmail) + '&' + queryString;
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        btn.disabled = false;
+        btn.textContent = '저장';
+
+        if (data.error) {
+          alert('저장 실패: ' + data.error);
+          return;
+        }
+
+        alert('저장 완료!\n매물ID: ' + data.매물ID + '\n고객ID: ' + data.고객ID);
+        closeAddModal();
+
+        fetchAllData().then(function() {
+          renderList();
+          renderMarkers();
+        });
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.textContent = '저장';
+        alert('오류: ' + err.message);
+      });
+  });
+}
+
+// ============================================================
+// 연락처 자동 포맷
+// ============================================================
+function formatPhoneNumber(input) {
+  var num = input.value.replace(/[^0-9]/g, '');
+  if (num.length <= 3) {
+    input.value = num;
+  } else if (num.length <= 7) {
+    input.value = num.substr(0, 3) + '-' + num.substr(3);
+  } else if (num.length <= 11) {
+    input.value = num.substr(0, 3) + '-' + num.substr(3, 4) + '-' + num.substr(7);
+  } else {
+    input.value = num.substr(0, 3) + '-' + num.substr(3, 4) + '-' + num.substr(7, 4);
+  }
+}
+
+function bindPhoneFormat() {
+  var el = document.getElementById('f_신규고객연락처');
+  if (!el) return;
+  if (el.dataset.phoneBound === '1') return;
+  el.dataset.phoneBound = '1';
+
+  el.addEventListener('input', function() {
+    var val = this.value;
+    if (/[ㄱ-ㅎ가-힣a-zA-Z]/.test(val)) return;
+    formatPhoneNumber(this);
+  });
+}
