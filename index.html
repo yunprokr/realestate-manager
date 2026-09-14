@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -111,10 +111,14 @@
       <section class="form-section">
         <h3>기본 정보</h3>
         <div class="form-grid">
-          <div class="form-field full">
-            <label>매물명 <span class="req">*</span></label>
-            <input type="text" id="f_매물명" placeholder="예: 해안동 23-16 전 36.3평">
-          </div>
+        <div class="form-field full">
+          <label>
+            매물명 <span class="req">*</span>
+            <button type="button" id="btnGenerateName" class="btn-inline">🔄 자동 생성</button>
+          </label>
+          <input type="text" id="f_매물명" placeholder="자동 생성되거나 직접 입력하세요">
+          <div class="field-hint" id="nameHint"></div>
+        </div>
 
           <div class="form-field">
             <label>매물유형 <span class="req">*</span></label>
