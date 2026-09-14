@@ -627,3 +627,78 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
 .field-hint.success { color: #27AE60; }
 .field-hint.warning { color: #E67E22; }
 
+/* ============================================================
+   Combobox (소재지 자동완성)
+   ============================================================ */
+.location-combobox-wrapper {
+  position: relative;
+}
+
+.combobox {
+  position: relative;
+  display: flex;
+}
+
+.combobox input {
+  flex: 1;
+  padding: 8px 36px 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+}
+.combobox input:focus { border-color: #4A90E2; }
+
+.combobox-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.combobox-toggle:hover { background: #f0f0f0; }
+
+.combobox-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 100;
+  margin-top: 4px;
+}
+
+.combobox-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.combobox-item:last-child { border-bottom: none; }
+.combobox-item:hover,
+.combobox-item.highlighted {
+  background: #f0f7ff;
+}
+.combobox-item.selected {
+  background: #e6f0ff;
+  font-weight: 600;
+}
+.combobox-empty {
+  padding: 16px;
+  text-align: center;
+  color: #aaa;
+  font-size: 12px;
+}
+
