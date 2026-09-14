@@ -812,8 +812,9 @@ function openAddModal() {
   resetAddForm();
   document.getElementById('addPropertyModal').classList.remove('hidden');
 
-  // Combobox 초기화 (매번 호출 - 내부에서 중복 체크)
   initLocationCombobox();
+  bindNameGenerationTriggers();
+  bindPhoneFormat();  // ⭐ 추가
 
   document.getElementById('geocodeStatus').textContent = '';
 }
@@ -926,16 +927,22 @@ document.querySelectorAll('.deal-check input[type="checkbox"]').forEach(cb => {
   cb.addEventListener('change', autoGenerateName);
 });
 
+
 // 자동 생성 (수동 수정 안 했을 때만)
 function autoGenerateName() {
+  console.log('[autoGenerateName] 호출됨. 수동수정여부:', propertyNameManuallyEdited);
+
   if (propertyNameManuallyEdited) return;
 
   var name = generatePropertyName();
+  console.log('[autoGenerateName] 생성된 이름:', name);
+
   if (name) {
     document.getElementById('f_매물명').value = name;
     updateNameHint();
   }
 }
+
 
 // 힌트 표시
 function updateNameHint() {
@@ -1214,41 +1221,68 @@ function renderTypeSpecificFields(type) {
       { id: 'f_층고', label: '층고 (m)', type: 'number' },
       { id: 'f_용도지역', label: '용도지역', type: 'text' }
     ];
-} else if (type === '주택') {
-  fields = [
-    { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
-    { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
-    { id: 'f_공급', label: '공급 (㎡)', type: 'number' },
-    { id: 'f_방', label: '방', type: 'number' },
-    { id: 'f_욕실', label: '욕실', type: 'number' },
-    { id: 'f_건축물용도', label: '건축물용도', type: 'text' },
-    { id: 'f_건물명', label: '건물명', type: 'text', placeholder: '예: 마크힐노형' },
-    { id: 'f_해당동', label: '해당동', type: 'text', placeholder: '예: 102동 (숫자만 입력 가능)' },
-    { id: 'f_호수', label: '호수', type: 'text', placeholder: '예: 401호 (숫자만 입력 가능)' },
-    { id: 'f_해당층총층', label: '해당층/총층', type: 'text', placeholder: '예: 4층/총4층' },
-    { id: 'f_방향', label: '방향', type: 'text', placeholder: '예: 남향' },
-    { id: 'f_주차', label: '주차', type: 'text' },
-    { id: 'f_세대수', label: '세대수', type: 'number' },
-    { id: 'f_사용승인일', label: '사용승인일', type: 'date' },
-    { id: 'f_특수구조', label: '특수구조 (복층/다락)', type: 'text' },
-    { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
-    { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
-    { id: 'f_엘리베이터', label: '엘리베이터', type: 'text' }
-  ];
-}
+  } else if (type === '주택') {
+    fields = [
+      { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
+      { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
+      { id: 'f_공급', label: '공급 (㎡)', type: 'number' },
+      { id: 'f_방', label: '방', type: 'number' },
+      { id: 'f_욕실', label: '욕실', type: 'number' },
+      { id: 'f_건축물용도', label: '건축물용도', type: 'text', placeholder: '예: 다세대주택, 단독주택' },
+      { id: 'f_건물명', label: '건물명', type: 'text', placeholder: '예: 마크힐노형' },
+      { id: 'f_해당동', label: '해당동', type: 'text', placeholder: '숫자만 (예: 102)' },
+      { id: 'f_호수', label: '호수', type: 'text', placeholder: '숫자만 (예: 401)' },
+      { id: 'f_해당층총층', label: '해당층/총층', type: 'text', placeholder: '예: 4층/총4층' },
+      { id: 'f_방향', label: '방향', type: 'text', placeholder: '예: 남서향' },
+      { id: 'f_주차', label: '주차', type: 'text' },
+      { id: 'f_세대수', label: '세대수', type: 'number' },
+      { id: 'f_사용승인일', label: '사용승인일', type: 'date' },
+      { id: 'f_특수구조', label: '특수구조 (복층/다락)', type: 'text' },
+      { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
+      { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
+      { id: 'f_엘리베이터', label: '엘리베이터', type: 'text' }
+    ];
+  }
 
-fields.forEach(f => {
-  var div = document.createElement('div');
-  div.className = 'form-field';
-  var placeholder = f.placeholder ? ' placeholder="' + f.placeholder + '"' : '';
-  div.innerHTML = '<label>' + f.label + '</label>'
-    + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + '>';
-  grid.appendChild(div);
-});
+  fields.forEach(f => {
+    var div = document.createElement('div');
+    div.className = 'form-field';
+    var placeholder = f.placeholder ? ' placeholder="' + f.placeholder + '"' : '';
+    div.innerHTML = '<label>' + f.label + '</label>'
+      + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + '>';
+    grid.appendChild(div);
+  });
 
-  
   container.appendChild(grid);
+
+  // ⭐ 새로 생성된 필드에 자동생성 트리거 연결
+  bindNameGenerationTriggers();
 }
+
+// ============================================================
+// 매물명 자동생성 트리거 재연결
+// ============================================================
+function bindNameGenerationTriggers() {
+  var ids = [
+    'f_매물유형', 'f_매물유형상세', 'f_소재지', 'f_산', 'f_본번', 'f_부번',
+    'f_용도지역', 'f_지구구역', 'f_대지', 'f_전용', 'f_공급', 'f_연면적',
+    'f_건물명', 'f_해당동', 'f_호수',
+    'f_매매가', 'f_보증금_전세', 'f_연세', 'f_보증금_월세', 'f_월세',
+    'f_보증금_단기', 'f_월세_단기', 'f_권리금'
+  ];
+
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    // 이미 바인딩됐는지 확인 (중복 방지)
+    if (el.dataset.nameTriggerBound === '1') return;
+    el.dataset.nameTriggerBound = '1';
+
+    el.addEventListener('change', autoGenerateName);
+    el.addEventListener('input', debounce(autoGenerateName, 400));
+  });
+}
+
 
 // ============================================================
 // 📝 매물명 자동 생성
@@ -1755,4 +1789,33 @@ document.getElementById('btnSaveAdd').addEventListener('click', function() {
       alert('오류: ' + err.message);
     });
 });
+
+// ============================================================
+// 연락처 자동 포맷 (01012345678 → 010-1234-5678)
+// ============================================================
+function formatPhoneNumber(input) {
+  var num = input.value.replace(/[^0-9]/g, '');
+  if (num.length <= 3) {
+    input.value = num;
+  } else if (num.length <= 7) {
+    input.value = num.substr(0, 3) + '-' + num.substr(3);
+  } else if (num.length <= 11) {
+    input.value = num.substr(0, 3) + '-' + num.substr(3, 4) + '-' + num.substr(7);
+  } else {
+    input.value = num.substr(0, 3) + '-' + num.substr(3, 4) + '-' + num.substr(7, 4);
+  }
+}
+
+// 연락처 입력 필드에 자동 포맷 적용
+function bindPhoneFormat() {
+  ['f_신규고객연락처', 'f_customerSearch'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el && el.dataset.phoneBound !== '1') {
+      el.dataset.phoneBound = '1';
+      el.addEventListener('input', function() {
+        formatPhoneNumber(this);
+      });
+    }
+  });
+}
 
