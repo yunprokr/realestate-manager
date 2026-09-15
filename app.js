@@ -357,10 +357,16 @@ function renderList() {
     return;
   }
 
+    // ===== 정렬: 최근 등록/수정순 =====
   filtered.sort(function(a, b) {
-    var da = a.확인일 || a.등록일 || '';
-    var db = b.확인일 || b.등록일 || '';
-    return db.localeCompare(da);
+    var da = normalizeDateStr(a.확인일 || a.등록일);
+    var db = normalizeDateStr(b.확인일 || b.등록일);
+
+    // 1차: 날짜 내림차순 (최신순)
+    if (da !== db) return db.localeCompare(da);
+
+    // 2차: 같은 날짜면 매물ID 내림차순 (P0227 > P0226)
+    return String(b.매물ID || '').localeCompare(String(a.매물ID || ''));
   });
 
   var html = '';
@@ -802,6 +808,16 @@ function escapeHtml(str) {
 function debounce(fn, ms) {
   var t;
   return function() { clearTimeout(t); t = setTimeout(fn, ms); };
+}
+
+// 날짜 문자열 정규화 (시간 제거)
+function normalizeDateStr(d) {
+  if (!d) return '';
+  var s = String(d).trim();
+  // "2026-09-15 08:00:00" → "2026-09-15"
+  // "2026-09-15T08:00:00" → "2026-09-15"
+  var match = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : s;
 }
 
 // ============================================================
