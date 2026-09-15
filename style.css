@@ -178,13 +178,49 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
 .detail-row .label { color: #888; }
 .detail-row .value { font-weight: 500; text-align: right; max-width: 60%; }
 
-.detail-actions { margin-top: 16px; display: flex; gap: 8px; }
+.detail-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .btn-blog {
-  flex: 1; padding: 12px; background: #03C75A; color: #fff;
-  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
-  cursor: pointer; text-decoration: none; text-align: center;
+  flex: 1 1 100%;
+  padding: 12px;
+  background: #03C75A;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
 }
 .btn-blog:hover { background: #02b350; }
+
+.btn-edit-prop,
+.btn-delete-prop {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 90px;
+  transition: background .15s;
+}
+.btn-edit-prop {
+  background: #4A90E2;
+  color: #fff;
+}
+.btn-edit-prop:hover { background: #357ABD; }
+.btn-delete-prop {
+  background: #E74C3C;
+  color: #fff;
+}
+.btn-delete-prop:hover { background: #C0392B; }
 
 /* ===== 모바일 하단 시트 ===== */
 #bottomSheet {
