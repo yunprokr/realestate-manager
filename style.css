@@ -1057,4 +1057,18 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
 }
 
 
+.btn-delete-customer {
+  padding: 10px 20px;
+  background: #E74C3C;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-delete-customer:hover { background: #C0392B; }
+
+
 
