@@ -1206,7 +1206,18 @@ if (typeSelect) {
       }
     }
 
-    // ⭐ 관리비포함항목: 토지가 아닐 때만 표시 (주택/상가/공장창고)
+    // ⭐ 관리비: 토지가 아닐 때만 표시
+    var 관리비Wrapper = document.getElementById('wrapper_관리비');
+    if (관리비Wrapper) {
+      if (type && type !== '토지') {
+        관리비Wrapper.style.display = '';
+      } else {
+        관리비Wrapper.style.display = 'none';
+        document.getElementById('f_관리비').value = '';
+      }
+    }
+
+    // ⭐ 관리비포함항목: 토지가 아닐 때만 표시
     var 관리비포함Wrapper = document.getElementById('wrapper_관리비포함항목');
     if (관리비포함Wrapper) {
       if (type && type !== '토지') {
@@ -2135,6 +2146,15 @@ function fillEditForm(p) {
       권리금Wrapper.style.display = '';
     } else {
       권리금Wrapper.style.display = 'none';
+    }
+  }
+
+  var 관리비Wrapper = document.getElementById('wrapper_관리비');
+  if (관리비Wrapper) {
+    if (p.매물유형 && p.매물유형 !== '토지') {
+      관리비Wrapper.style.display = '';
+    } else {
+      관리비Wrapper.style.display = 'none';
     }
   }
 
