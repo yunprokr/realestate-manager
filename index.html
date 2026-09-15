@@ -92,10 +92,44 @@
   </div>
 
   <div id="customerPane" class="pane hidden">
-    <div class="customer-placeholder">
-      <p>고객관리 화면은 다음 단계에서 구현됩니다.</p>
-    </div>
+  <div id="customerLayout">
+    <aside id="customerSidebar">
+      <div class="filter-panel">
+        <div class="filter-row">
+          <select id="customerFilterType">
+            <option value="">전체 고객유형</option>
+            <option>일반</option>
+            <option>중개사</option>
+            <option>분양사</option>
+          </select>
+          <select id="customerFilterDeal">
+            <option value="">전체 거래유형</option>
+            <option>매도</option>
+            <option>매수</option>
+            <option>임대 전세</option>
+            <option>임대 연세</option>
+            <option>임대 월세</option>
+            <option>임대 단기</option>
+            <option>임차 전세</option>
+            <option>임차 연세</option>
+            <option>임차 월세</option>
+            <option>임차 단기</option>
+          </select>
+        </div>
+        <input type="text" id="customerSearchInput" placeholder="고객명, 연락처, 소유주명 검색">
+        <div id="customerCountBar">표시 <span id="customerFilteredCount">0</span> / 전체 <span id="customerTotalCount">0</span></div>
+      </div>
+      <div id="customerListContainer"></div>
+    </aside>
+
+    <main id="customerMainPane">
+      <div class="customer-empty-state">
+        <div class="customer-empty-icon">👤</div>
+        <p>고객을 선택하면 상세 정보가 표시됩니다</p>
+      </div>
+    </main>
   </div>
+</div>
 </div>
 
 <div id="addPropertyModal" class="modal hidden">
