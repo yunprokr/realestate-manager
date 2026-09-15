@@ -1195,6 +1195,17 @@ if (typeSelect) {
       });
     }
 
+    // ⭐ 권리금: 상가일 때만 표시
+    var 권리금Wrapper = document.getElementById('wrapper_권리금');
+    if (권리금Wrapper) {
+      if (type === '상가') {
+        권리금Wrapper.style.display = '';
+      } else {
+        권리금Wrapper.style.display = 'none';
+        document.getElementById('f_권리금').value = '';
+      }
+    }
+
     renderTypeSpecificFields(type);
   });
 }
@@ -1238,7 +1249,7 @@ function renderTypeSpecificFields(type) {
       { id: 'f_층고', label: '층고 (m)', type: 'number' },
       { id: 'f_용도지역', label: '용도지역', type: 'text' }
     ];
-  } else if (type === '주택') {
+    } else if (type === '주택') {
     fields = [
       { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
       { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
@@ -1253,25 +1264,41 @@ function renderTypeSpecificFields(type) {
       { id: 'f_방향', label: '방향', type: 'text', placeholder: '예: 남서향' },
       { id: 'f_주차', label: '주차', type: 'text' },
       { id: 'f_세대수', label: '세대수', type: 'number' },
-      { id: 'f_사용승인일', label: '사용승인일', type: 'date' },
+      { id: 'f_사용승인일', label: '사용승인일', type: 'text', placeholder: '예: 2016-01-04 (숫자만 입력 가능)' },
       { id: 'f_특수구조', label: '특수구조 (복층/다락)', type: 'text' },
       { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
       { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
-      { id: 'f_엘리베이터', label: '엘리베이터', type: 'text' }
+      { id: 'f_엘리베이터', label: '엘리베이터', type: 'select', options: ['O', 'X'] }
     ];
   }
 
-  fields.forEach(function(f) {
+    fields.forEach(function(f) {
     var div = document.createElement('div');
     div.className = 'form-field';
-    var placeholder = f.placeholder ? ' placeholder="' + f.placeholder + '"' : '';
-    div.innerHTML = '<label>' + f.label + '</label>'
-      + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + '>';
+
+    if (f.type === 'select' && f.options) {
+      // 드롭다운
+      var opts = '<option value="">선택</option>';
+      f.options.forEach(function(opt) {
+        opts += '<option value="' + opt + '">' + opt + '</option>';
+      });
+      div.innerHTML = '<label>' + f.label + '</label>'
+        + '<select id="' + f.id + '">' + opts + '</select>';
+    } else {
+      // 일반 input
+      var placeholder = f.placeholder ? ' placeholder="' + f.placeholder + '"' : '';
+      div.innerHTML = '<label>' + f.label + '</label>'
+        + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + '>';
+    }
+
     grid.appendChild(div);
   });
 
-  container.appendChild(grid);
+  
+   container.appendChild(grid);
+
   bindNameGenerationTriggers();
+  bindDateInput();
 }
 
 // ============================================================
@@ -1956,6 +1983,36 @@ function bindPhoneFormat() {
     });
   });
 }
+
+// ============================================================
+// 날짜 자동 포맷 (20160104 → 2016-01-04)
+// ============================================================
+function formatDateInput(input) {
+  var num = input.value.replace(/[^0-9]/g, '');
+  if (num.length === 8) {
+    input.value = num.substr(0, 4) + '-' + num.substr(4, 2) + '-' + num.substr(6, 2);
+  } else if (num.length === 6) {
+    input.value = num.substr(0, 4) + '-' + num.substr(4, 2);
+  } else {
+    input.value = num;
+  }
+}
+
+// 사용승인일 자동 포맷 바인딩
+function bindDateInput() {
+  var el = document.getElementById('f_사용승인일');
+  if (!el) return;
+  if (el.dataset.dateBound === '1') return;
+  el.dataset.dateBound = '1';
+
+  el.addEventListener('input', function() {
+    var num = this.value.replace(/[^0-9]/g, '');
+    if (num.length >= 6) {
+      formatDateInput(this);
+    }
+  });
+}
+
 
 // ============================================================
 // 🖊️ 매물 상세 - 수정/삭제 버튼 이벤트
