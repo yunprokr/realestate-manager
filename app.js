@@ -1774,15 +1774,27 @@ function formatPhoneNumber(input) {
 }
 
 function bindPhoneFormat() {
-  var el = document.getElementById('f_신규고객연락처');
-  if (!el) return;
-  if (el.dataset.phoneBound === '1') return;
-  el.dataset.phoneBound = '1';
+  // 포맷팅 적용할 연락처 필드들
+  var phoneFieldIds = [
+    'f_신규고객연락처',   // 매물 등록 - 신규 고객
+    'ce_연락처',          // 고객 수정 - 연락처
+    'ce_소유주연락처',    // 고객 수정 - 소유주연락처
+    'ce_추가연락처'       // 고객 수정 - 추가연락처
+  ];
 
-  el.addEventListener('input', function() {
-    var val = this.value;
-    if (/[ㄱ-ㅎ가-힣a-zA-Z]/.test(val)) return;
-    formatPhoneNumber(this);
+  phoneFieldIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.dataset.phoneBound === '1') return;
+    el.dataset.phoneBound = '1';
+
+    el.addEventListener('input', function() {
+      var val = this.value;
+      // 이름(한글)이 있으면 스킵 (검색어 입력 고려)
+      if (/[ㄱ-ㅎ가-힣a-zA-Z]/.test(val)) return;
+      // 숫자/하이픈만 있으면 전화번호로 간주하고 포맷
+      formatPhoneNumber(this);
+    });
   });
 }
 
@@ -2376,6 +2388,9 @@ function openCustomerEditModal(c) {
   document.getElementById('ce_희망가격_최대').value = c.희망가격_최대 || '';
   document.getElementById('ce_메모').value = c.메모 || '';
   document.getElementById('ce_문의이력').value = c.문의이력 || '';
+
+  // ⭐ 연락처 자동 포맷 바인딩
+  bindPhoneFormat();
 
   document.getElementById('customerEditModal').classList.remove('hidden');
 }
