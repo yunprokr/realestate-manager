@@ -8,6 +8,32 @@
 </head>
 <body>
 
+<!-- 용도지역 선택 옵션 -->
+<datalist id="용도지역List">
+  <option value="자연녹지">
+  <option value="계획관리">
+  <option value="보전관리">
+  <option value="생산관리">
+  <option value="자연환경보전">
+  <option value="농림지역">
+  <option value="보전녹지">
+  <option value="생산녹지">
+  <option value="준주거">
+  <option value="제1종일반주거">
+  <option value="제2종일반주거">
+  <option value="제3종일반주거">
+  <option value="중심상업">
+  <option value="일반상업">
+  <option value="근린상업">
+  <option value="유통상업">
+  <option value="전용공업">
+  <option value="일반공업">
+  <option value="준공업">
+  <option value="관리지역">
+  <option value="도시지역">
+</datalist>
+    
+    
 <div id="authScreen" class="auth-screen">
   <div class="auth-box">
     <h1>🏢 부동산 매물관리</h1>
@@ -351,6 +377,13 @@
           <div class="form-field" id="wrapper_권리금" style="display: none;">
             <label>권리금 (만원)</label>
             <input type="number" id="f_권리금">
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 8px;">
+          <div class="form-field full" id="wrapper_관리비포함항목" style="display: none;">
+            <label>관리비 포함 항목</label>
+            <input type="text" id="f_관리비포함항목" placeholder="예: 수도, 전기, 인터넷">
           </div>
         </div>
       </section>
