@@ -2313,11 +2313,142 @@ function bindCustomerDetailClose() {
   }
   if (editBtn) {
     editBtn.addEventListener('click', function() {
-      alert('고객 수정 기능은 다음 단계에서 구현됩니다.');
+      var c = allCustomers.find(function(x) {
+        return String(x.고객ID) === String(selectedCustomerId);
+      });
+      if (c) {
+        document.getElementById('customerDetailModal').classList.add('hidden');
+        openCustomerEditModal(c);
+      }
     });
   }
+
+  var ceClose = document.getElementById('closeCustomerEditModal');
+  var ceCancel = document.getElementById('btnCancelCustomerEdit');
+  if (ceClose) {
+    ceClose.addEventListener('click', function() {
+      document.getElementById('customerEditModal').classList.add('hidden');
+    });
+  }
+  if (ceCancel) {
+    ceCancel.addEventListener('click', function() {
+      document.getElementById('customerEditModal').classList.add('hidden');
+    });
+  }
+  var ceSave = document.getElementById('btnSaveCustomerEdit');
+  if (ceSave) {
+    ceSave.addEventListener('click', saveCustomerEdit);
+  }
 }
+
+
 
 // 초기 바인딩
 bindCustomerFilters();
 bindCustomerDetailClose();
+
+
+
+// ============================================================
+// ✏️ 고객 수정 모달
+// ============================================================
+function openCustomerEditModal(c) {
+  document.getElementById('ce_고객ID').value = c.고객ID || '';
+  document.getElementById('ce_고객명').value = c.고객명 || '';
+  document.getElementById('ce_고객유형').value = c.고객유형 || '일반';
+  document.getElementById('ce_연락처').value = c.연락처 || '';
+  document.getElementById('ce_통신사').value = c.통신사 || '';
+  document.getElementById('ce_추가연락처').value = c.추가연락처 || '';
+  document.getElementById('ce_관계').value = c.관계 || '';
+  document.getElementById('ce_소유주명').value = c.소유주명 || '';
+  document.getElementById('ce_소유주연락처').value = c.소유주연락처 || '';
+  document.getElementById('ce_소유주네이버ID').value = c.소유주네이버ID || '';
+  document.getElementById('ce_소유주통신사').value = c.소유주통신사 || '';
+  document.getElementById('ce_거래유형').value = c.거래유형 || '';
+  document.getElementById('ce_등급').value = c.등급 || '';
+  document.getElementById('ce_고객상태').value = c.고객상태 || '';
+  document.getElementById('ce_계약상태').value = c.계약상태 || '';
+  document.getElementById('ce_유입경로').value = c.유입경로 || '';
+  document.getElementById('ce_광고용이름').value = c.광고용이름 || '';
+  document.getElementById('ce_희망매물종류').value = c.희망매물종류 || '';
+  document.getElementById('ce_희망지역').value = c.희망지역 || '';
+  document.getElementById('ce_희망가격_최소').value = c.희망가격_최소 || '';
+  document.getElementById('ce_희망가격_최대').value = c.희망가격_최대 || '';
+  document.getElementById('ce_메모').value = c.메모 || '';
+  document.getElementById('ce_문의이력').value = c.문의이력 || '';
+
+  document.getElementById('customerEditModal').classList.remove('hidden');
+}
+
+function saveCustomerEdit() {
+  var btn = document.getElementById('btnSaveCustomerEdit');
+  var 고객ID = document.getElementById('ce_고객ID').value;
+  var 고객명 = document.getElementById('ce_고객명').value.trim();
+
+  if (!고객ID) { alert('고객ID가 없습니다'); return; }
+  if (!고객명) { alert('고객명을 입력하세요'); return; }
+
+  var params = {
+    고객ID: 고객ID,
+    고객명: 고객명,
+    고객유형: document.getElementById('ce_고객유형').value,
+    연락처: document.getElementById('ce_연락처').value.trim(),
+    통신사: document.getElementById('ce_통신사').value.trim(),
+    추가연락처: document.getElementById('ce_추가연락처').value.trim(),
+    관계: document.getElementById('ce_관계').value.trim(),
+    소유주명: document.getElementById('ce_소유주명').value.trim(),
+    소유주연락처: document.getElementById('ce_소유주연락처').value.trim(),
+    소유주네이버ID: document.getElementById('ce_소유주네이버ID').value.trim(),
+    소유주통신사: document.getElementById('ce_소유주통신사').value.trim(),
+    거래유형: document.getElementById('ce_거래유형').value,
+    등급: document.getElementById('ce_등급').value,
+    고객상태: document.getElementById('ce_고객상태').value.trim(),
+    계약상태: document.getElementById('ce_계약상태').value.trim(),
+    유입경로: document.getElementById('ce_유입경로').value.trim(),
+    광고용이름: document.getElementById('ce_광고용이름').value.trim(),
+    희망매물종류: document.getElementById('ce_희망매물종류').value.trim(),
+    희망지역: document.getElementById('ce_희망지역').value.trim(),
+    희망가격_최소: document.getElementById('ce_희망가격_최소').value,
+    희망가격_최대: document.getElementById('ce_희망가격_최대').value,
+    메모: document.getElementById('ce_메모').value.trim(),
+    문의이력: document.getElementById('ce_문의이력').value.trim()
+  };
+
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+
+  var queryString = Object.keys(params).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+
+  var url = API_URL + '?action=updateCustomer&email=' + encodeURIComponent(authEmail) + '&' + queryString;
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      btn.textContent = '저장';
+
+      if (data.error) {
+        alert('수정 실패: ' + data.error);
+        return;
+      }
+
+      alert('수정 완료!');
+      document.getElementById('customerEditModal').classList.add('hidden');
+
+      fetchAllData().then(function() {
+        renderCustomerList();
+        var updated = allCustomers.find(function(x) { return String(x.고객ID) === String(고객ID); });
+        if (updated) {
+          showCustomerDetail(updated);
+        }
+      });
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '저장';
+      alert('오류: ' + err.message);
+    });
+}
+
