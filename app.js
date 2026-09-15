@@ -2042,3 +2042,261 @@ function deletePropertyConfirm(propertyId) {
 }
 
 
+// ============================================================
+// 👤 고객관리
+// ============================================================
+var selectedCustomerId = null;
+
+// ============================================================
+// 고객 리스트 렌더
+// ============================================================
+function renderCustomerList() {
+  var container = document.getElementById('customerListContainer');
+  if (!container) return;
+
+  var filtered = getFilteredCustomers();
+
+  document.getElementById('customerFilteredCount').textContent = filtered.length;
+  document.getElementById('customerTotalCount').textContent = allCustomers.length;
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty">조건에 맞는 고객이 없습니다.</div>';
+    return;
+  }
+
+  filtered.sort(function(a, b) {
+    var da = a.등록일 || '';
+    var db = b.등록일 || '';
+    return db.localeCompare(da);
+  });
+
+  var html = '';
+  filtered.forEach(function(c) {
+    var dealType = c.거래유형 || '';
+    var dealClass = getDealClass(dealType);
+    var ownedCount = getOwnedProperties(c.고객ID).length;
+
+    html += '<div class="customer-card ' + (selectedCustomerId === c.고객ID ? 'active' : '') + '" data-id="' + escapeHtml(c.고객ID) + '">';
+    html += '  <div class="cc-row-1">';
+    html += '    <span class="deal-tag ' + dealClass + '">' + escapeHtml(dealType || '기타') + '</span>';
+    if (c.고객유형) html += '<span class="customer-type-tag">' + escapeHtml(c.고객유형) + '</span>';
+    if (c.등급) html += '<span class="grade-tag grade-' + escapeHtml(c.등급) + '">' + escapeHtml(c.등급) + '</span>';
+    html += '  </div>';
+    html += '  <div class="cc-name">' + escapeHtml(c.고객명 || '이름없음') + '</div>';
+    if (c.연락처) html += '  <div class="cc-contact">📞 ' + escapeHtml(c.연락처) + '</div>';
+    if (c.메모) html += '  <div class="cc-memo">' + escapeHtml(c.메모) + '</div>';
+    if (ownedCount > 0) {
+      html += '  <div class="cc-property-count">🏢 소유 매물 <strong>' + ownedCount + '</strong>건</div>';
+    }
+    html += '</div>';
+  });
+  container.innerHTML = html;
+
+  container.querySelectorAll('.customer-card').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var c = allCustomers.find(function(x) {
+        return String(x.고객ID) === String(el.dataset.id);
+      });
+      if (c) showCustomerDetail(c);
+    });
+  });
+}
+
+function getDealClass(dealType) {
+  if (!dealType) return 'deal-기타';
+  if (dealType.indexOf('매도') === 0) return 'deal-매도';
+  if (dealType.indexOf('매수') === 0) return 'deal-매수';
+  if (dealType.indexOf('임대') === 0) return 'deal-임대';
+  if (dealType.indexOf('임차') === 0) return 'deal-임차';
+  return 'deal-기타';
+}
+
+function getFilteredCustomers() {
+  var typeEl = document.getElementById('customerFilterType');
+  var dealEl = document.getElementById('customerFilterDeal');
+  var searchEl = document.getElementById('customerSearchInput');
+
+  if (!typeEl || !dealEl || !searchEl) return allCustomers;
+
+  var type = typeEl.value;
+  var deal = dealEl.value;
+  var keyword = searchEl.value.trim().toLowerCase();
+
+  return allCustomers.filter(function(c) {
+    if (type && c.고객유형 !== type) return false;
+    if (deal && c.거래유형 !== deal) return false;
+    if (keyword) {
+      var hay = ((c.고객명 || '') + ' ' + (c.연락처 || '') + ' ' + (c.소유주명 || '') + ' ' + (c.소유주연락처 || '')).toLowerCase();
+      if (hay.indexOf(keyword) === -1) return false;
+    }
+    return true;
+  });
+}
+
+function bindCustomerFilters() {
+  var typeEl = document.getElementById('customerFilterType');
+  var dealEl = document.getElementById('customerFilterDeal');
+  var searchEl = document.getElementById('customerSearchInput');
+
+  if (typeEl) typeEl.addEventListener('change', renderCustomerList);
+  if (dealEl) dealEl.addEventListener('change', renderCustomerList);
+  if (searchEl) searchEl.addEventListener('input', debounce(renderCustomerList, 250));
+}
+
+function getOwnedProperties(customerId) {
+  if (!customerId) return [];
+  return allProperties.filter(function(p) {
+    return String(p.고객ID) === String(customerId);
+  });
+}
+
+function showCustomerDetail(c) {
+  selectedCustomerId = c.고객ID;
+
+  document.querySelectorAll('.customer-card').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.id === c.고객ID);
+  });
+
+  var content = document.getElementById('customerDetailContent');
+  content.innerHTML = buildCustomerDetailHTML(c);
+
+  content.querySelectorAll('.owned-property-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var propId = el.dataset.propId;
+      document.getElementById('customerDetailModal').classList.add('hidden');
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      var propTab = document.querySelector('.tab[data-tab="property"]');
+      if (propTab) propTab.classList.add('active');
+      currentTab = 'property';
+      document.getElementById('propertyPane').classList.remove('hidden');
+      document.getElementById('customerPane').classList.add('hidden');
+      setTimeout(function() {
+        focusProperty(propId);
+      }, 100);
+    });
+  });
+
+  document.getElementById('customerDetailModal').classList.remove('hidden');
+}
+
+function buildCustomerDetailHTML(c) {
+  var h = '';
+  var dealType = c.거래유형 || '';
+
+  h += '<div class="customer-detail-header">';
+  h += '  <div class="customer-detail-tags">';
+  if (dealType) h += '<span class="deal-tag ' + getDealClass(dealType) + '">' + escapeHtml(dealType) + '</span>';
+  if (c.고객유형) h += '<span class="customer-type-tag">' + escapeHtml(c.고객유형) + '</span>';
+  if (c.등급) h += '<span class="grade-tag grade-' + escapeHtml(c.등급) + '">' + escapeHtml(c.등급) + '</span>';
+  h += '  </div>';
+  h += '  <div class="customer-detail-name">' + escapeHtml(c.고객명 || '이름없음') + '</div>';
+  h += '</div>';
+
+  h += '<div class="customer-detail-section">';
+  h += '  <h4>기본 정보</h4>';
+  if (c.고객ID) h += cDetailRow('고객ID', c.고객ID);
+  if (c.연락처) h += cDetailRow('연락처', c.연락처);
+  if (c.통신사) h += cDetailRow('통신사', c.통신사);
+  if (c.추가연락처) h += cDetailRow('추가연락처', c.추가연락처);
+  if (c.관계) h += cDetailRow('관계', c.관계);
+  if (c.등록일) h += cDetailRow('등록일', c.등록일);
+  h += '</div>';
+
+  if (c.소유주명 || c.소유주연락처 || c.소유주네이버ID) {
+    h += '<div class="customer-detail-section">';
+    h += '  <h4>소유주 정보</h4>';
+    if (c.소유주명) h += cDetailRow('소유주명', c.소유주명);
+    if (c.소유주연락처) h += cDetailRow('소유주연락처', c.소유주연락처);
+    if (c.소유주네이버ID) h += cDetailRow('소유주 네이버ID', c.소유주네이버ID);
+    if (c.소유주통신사) h += cDetailRow('소유주통신사', c.소유주통신사);
+    h += '</div>';
+  }
+
+  if (c.고객상태 || c.계약상태) {
+    h += '<div class="customer-detail-section">';
+    h += '  <h4>상태</h4>';
+    if (c.고객상태) h += cDetailRow('고객상태', c.고객상태);
+    if (c.계약상태) h += cDetailRow('계약상태', c.계약상태);
+    h += '</div>';
+  }
+
+  if (c.희망매물종류 || c.희망지역 || c.희망가격_최소 || c.희망가격_최대) {
+    h += '<div class="customer-detail-section">';
+    h += '  <h4>희망 조건</h4>';
+    if (c.희망매물종류) h += cDetailRow('희망매물', c.희망매물종류);
+    if (c.희망지역) h += cDetailRow('희망지역', c.희망지역);
+    if (c.희망가격_최소 || c.희망가격_최대) {
+      var priceRange = (c.희망가격_최소 || '0') + ' ~ ' + (c.희망가격_최대 || '∞') + '만원';
+      h += cDetailRow('희망가격', priceRange);
+    }
+    h += '</div>';
+  }
+
+  if (c.유입경로 || c.광고용이름 || c.문의이력) {
+    h += '<div class="customer-detail-section">';
+    h += '  <h4>기타</h4>';
+    if (c.유입경로) h += cDetailRow('유입경로', c.유입경로);
+    if (c.광고용이름) h += cDetailRow('광고용이름', c.광고용이름);
+    if (c.문의이력) h += cDetailRow('문의이력', c.문의이력);
+    h += '</div>';
+  }
+
+  if (c.메모) {
+    h += '<div class="customer-detail-section">';
+    h += '  <h4>메모</h4>';
+    h += '  <div class="customer-detail-memo">' + escapeHtml(c.메모) + '</div>';
+    h += '</div>';
+  }
+
+  var owned = getOwnedProperties(c.고객ID);
+  h += '<div class="customer-detail-section">';
+  h += '  <h4>소유 매물 (' + owned.length + '건)</h4>';
+  if (!owned.length) {
+    h += '  <div class="owned-property-empty">소유 매물이 없습니다</div>';
+  } else {
+    h += '  <div class="owned-property-list">';
+    owned.forEach(function(p) {
+      h += '<div class="owned-property-item" data-prop-id="' + escapeHtml(p.매물ID) + '">';
+      h += '  <span class="op-type-tag" style="background:' + p.색상 + '">' + escapeHtml(p.매물유형 || '') + '</span>';
+      h += '  <div class="op-info">';
+      h += '    <div class="op-name">' + escapeHtml(p.매물명 || '') + '</div>';
+      h += '    <div class="op-meta">' + escapeHtml(p.거래유형 || '') + ' · ' + formatPrice(p) + '</div>';
+      h += '  </div>';
+      h += '</div>';
+    });
+    h += '  </div>';
+  }
+  h += '</div>';
+
+  return h;
+}
+
+function cDetailRow(label, value) {
+  return '<div class="customer-detail-row"><span class="label">' + escapeHtml(label) + '</span><span class="value">' + escapeHtml(value) + '</span></div>';
+}
+
+function bindCustomerDetailClose() {
+  var closeBtn = document.getElementById('closeCustomerDetailModal');
+  var closeBtn2 = document.getElementById('btnCloseCustomerDetail');
+  var editBtn = document.getElementById('btnEditCustomerFromDetail');
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', function() {
+      document.getElementById('customerDetailModal').classList.add('hidden');
+    });
+  }
+  if (closeBtn2) {
+    closeBtn2.addEventListener('click', function() {
+      document.getElementById('customerDetailModal').classList.add('hidden');
+    });
+  }
+  if (editBtn) {
+    editBtn.addEventListener('click', function() {
+      alert('고객 수정 기능은 다음 단계에서 구현됩니다.');
+    });
+  }
+}
+
+// 초기 바인딩
+bindCustomerFilters();
+bindCustomerDetailClose();
