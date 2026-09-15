@@ -126,15 +126,16 @@ function startApp() {
   showLoading(true, '데이터 로드 중...');
 
   Promise.all([loadKakaoSDK(), fetchAllData()])
-    .then(function() {
-      initMap();
-      bindTabs();
-      bindFilters();
-      bindDetailClose();
-      renderList();
-      renderMarkers();
-      showLoading(false);
-    })
+  .then(function() {
+    initMap();
+    bindTabs();
+    bindFilters();
+    bindDetailClose();
+    bindMapTypeToggle();   // ⭐ 추가
+    renderList();
+    renderMarkers();
+    showLoading(false);
+  })
     .catch(function(err) {
       showLoading(false);
       alert('초기화 실패: ' + err);
@@ -257,6 +258,42 @@ function bindTabs() {
     });
   });
 }
+
+// ============================================================
+// 지도/위성/지적 토글
+// ============================================================
+function bindMapTypeToggle() {
+  var buttons = document.querySelectorAll('.map-type-btn');
+  if (!buttons.length) return;
+
+  buttons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var type = this.dataset.maptype;
+      buttons.forEach(function(b) { b.classList.remove('active'); });
+      this.classList.add('active');
+
+      if (!map) return;
+
+      // 지적편집도 오버레이 초기화
+      try {
+        map.removeOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);
+      } catch (e) {}
+
+      if (type === 'hybrid') {
+        // 위성지도
+        map.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
+      } else if (type === 'district') {
+        // 지적편집도 (일반지도 + 오버레이)
+        map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
+        map.addOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT);
+      } else {
+        // 일반지도
+        map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
+      }
+    });
+  });
+}
+
 
 // ============================================================
 // 매물 필터
