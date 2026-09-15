@@ -22,7 +22,7 @@ var TYPE_DETAIL_MAP = {
   '토지':     ['전', '답', '과수원', '임야', '대지', '잡종지', '목장용지'],
   '상가':     ['일반상가', '사무실', '상가건물(통매)', '숙박시설(펜션/모텔)', '근생', '빌딩'],
   '공장창고': ['공장', '창고', '야적장', '지식산업센터'],
-   '주택':     ['원룸', '2룸', '3룸', '단독', '단독다가구', '구옥', '전원농가',
+  '주택':     ['원룸', '2룸', '3룸', '단독', '단독다가구', '구옥', '전원농가',
                '타운하우스', '아파트', '빌라', '연립', '다세대', '오피스텔',
                '생활형숙박시설']
 };
@@ -169,24 +169,17 @@ function initMap() {
     renderMarkers();
   }, 150));
 
-  // ⭐ 매물 로드 후 자동으로 범위 조정
   fitMapToProperties();
 }
 
-// ============================================================
-// 매물 전체가 보이도록 지도 범위 자동 조정
-// ============================================================
 function fitMapToProperties() {
   if (!map) return;
 
-  // 좌표가 있는 매물만 필터
   var coords = allProperties.filter(function(p) {
     return p.lat && p.lng;
   });
-
   if (coords.length === 0) return;
 
-  // 바운딩 박스 계산
   var minLat = coords[0].lat, maxLat = coords[0].lat;
   var minLng = coords[0].lng, maxLng = coords[0].lng;
 
@@ -197,21 +190,15 @@ function fitMapToProperties() {
     if (p.lng > maxLng) maxLng = p.lng;
   });
 
-  // 남서쪽, 북동쪽 좌표
   var sw = new kakao.maps.LatLng(minLat, minLng);
   var ne = new kakao.maps.LatLng(maxLat, maxLng);
-
-  // 범위에 맞게 지도 조정 (여백 50px)
   var bounds = new kakao.maps.LatLngBounds(sw, ne);
   map.setBounds(bounds, 50, 50, 50, 50);
 
-  // 너무 확대되면 최소 레벨 제한 (매물이 1~2건일 때)
   if (map.getLevel() < 5) {
     map.setLevel(5);
   }
 }
-
-
 
 function initClusterer() {
   clusterer = new kakao.maps.MarkerClusterer({
@@ -272,7 +259,7 @@ function bindTabs() {
 }
 
 // ============================================================
-// 필터
+// 매물 필터
 // ============================================================
 function bindFilters() {
   document.getElementById('filterType').addEventListener('change', function() {
@@ -593,7 +580,7 @@ function showDetailPanel(p) {
 
   var container = document.getElementById('detailContent');
   container.innerHTML = buildDetailHTML(p);
-  bindDetailActionButtons(container);   // ⭐ 버튼 이벤트 연결
+  bindDetailActionButtons(container);
   panel.classList.remove('hidden');
 
   if (wasHidden) {
@@ -609,7 +596,7 @@ function showBottomSheet(p) {
 
   var container = document.getElementById('bottomSheetContent');
   container.innerHTML = buildDetailHTML(p);
-  bindDetailActionButtons(container);   // ⭐ 버튼 이벤트 연결
+  bindDetailActionButtons(container);
   bs.classList.remove('hidden');
 
   if (wasHidden) {
@@ -622,15 +609,11 @@ function showBottomSheet(p) {
 function bindDetailClose() {
   document.getElementById('detailClosePC').addEventListener('click', function() {
     document.getElementById('detailPanel').classList.add('hidden');
-    setTimeout(function() {
-      if (map) map.relayout();
-    }, 220);
+    setTimeout(function() { if (map) map.relayout(); }, 220);
   });
   document.getElementById('detailCloseMobile').addEventListener('click', function() {
     document.getElementById('bottomSheet').classList.add('hidden');
-    setTimeout(function() {
-      if (map) map.relayout();
-    }, 220);
+    setTimeout(function() { if (map) map.relayout(); }, 220);
   });
 }
 
@@ -670,7 +653,6 @@ function buildDetailHTML(p) {
   if (p.고객ID) h += detailRow('고객ID', p.고객ID);
   h += '</div>';
 
-    // 액션 버튼 (블로그 / 수정 / 삭제)
   h += '<div class="detail-actions">';
   if (p.블로그링크) {
     h += '<a class="btn-blog" href="' + escapeHtml(p.블로그링크) + '" target="_blank" rel="noopener">📝 블로그 보기</a>';
@@ -830,7 +812,6 @@ document.getElementById('closeAddModal').addEventListener('click', closeAddModal
 document.getElementById('btnCancelAdd').addEventListener('click', closeAddModal);
 
 function openAddModal() {
-  console.log('[openAddModal] 시작');
   resetAddForm();
   document.getElementById('addPropertyModal').classList.remove('hidden');
 
@@ -844,10 +825,11 @@ function openAddModal() {
 function closeAddModal() {
   document.getElementById('addPropertyModal').classList.add('hidden');
 
-  // 수정 모드 초기화
   currentEditPropertyId = null;
-  document.querySelector('#addPropertyModal .modal-header h2').textContent = '매물 등록';
-  document.getElementById('btnSaveAdd').textContent = '저장';
+  var h2 = document.querySelector('#addPropertyModal .modal-header h2');
+  if (h2) h2.textContent = '매물 등록';
+  var saveBtn = document.getElementById('btnSaveAdd');
+  if (saveBtn) saveBtn.textContent = '저장';
 }
 
 function resetAddForm() {
@@ -880,9 +862,7 @@ function resetAddForm() {
     locationCombobox.input.value = '';
     locationCombobox.input.dataset.value = '';
     locationCombobox.selectedValue = '';
-    if (typeof closeLocationDropdown === 'function') {
-      closeLocationDropdown();
-    }
+    if (typeof closeLocationDropdown === 'function') closeLocationDropdown();
   }
 
   if (typeof propertyNameManuallyEdited !== 'undefined') {
@@ -912,15 +892,15 @@ if (nameField) {
 var btnGen = document.getElementById('btnGenerateName');
 if (btnGen) {
   btnGen.addEventListener('click', function() {
-    var name = generatePropertyName();
+    var deals = getSelectedDeals();
+    var dealType = deals.length ? deals[0].type : '';
+    var name = generatePropertyNameForDeal(dealType);
     if (!name) {
       alert('매물유형, 소재지 등 필수 정보를 먼저 입력하세요');
       return;
     }
     if (propertyNameManuallyEdited) {
-      if (!confirm('매물명이 수정되었습니다. 자동 생성으로 덮어쓸까요?')) {
-        return;
-      }
+      if (!confirm('매물명이 수정되었습니다. 자동 생성으로 덮어쓸까요?')) return;
     }
     document.getElementById('f_매물명').value = name;
     propertyNameManuallyEdited = false;
@@ -934,8 +914,9 @@ document.querySelectorAll('.deal-check input[type="checkbox"]').forEach(function
 
 function autoGenerateName() {
   if (propertyNameManuallyEdited) return;
-
-  var name = generatePropertyName();
+  var deals = getSelectedDeals();
+  var dealType = deals.length ? deals[0].type : '';
+  var name = generatePropertyNameForDeal(dealType);
   if (name) {
     document.getElementById('f_매물명').value = name;
     updateNameHint();
@@ -1128,15 +1109,11 @@ function scrollToHighlighted() {
 
 function selectLocation(loc) {
   if (!loc) return;
-
   locationCombobox.input.value = loc.Location;
   locationCombobox.selectedValue = loc.Location;
   locationCombobox.input.dataset.value = loc.Location;
   closeLocationDropdown();
-
-  if (typeof autoGenerateName === 'function') {
-    autoGenerateName();
-  }
+  if (typeof autoGenerateName === 'function') autoGenerateName();
 }
 
 function closeLocationDropdown() {
@@ -1241,7 +1218,6 @@ function renderTypeSpecificFields(type) {
   });
 
   container.appendChild(grid);
-
   bindNameGenerationTriggers();
 }
 
@@ -1273,36 +1249,39 @@ function buildJibunStr() {
   return addr;
 }
 
-function formatDealPrice() {
-  var deals = getSelectedDeals();
-  if (!deals.length) return '';
+// 특정 거래유형의 가격 문자열 생성
+function formatDealPriceForType(dealType) {
+  if (!dealType) return '';
 
-  var d = deals[0];
-  var t = d.type;
-
-  if (t === '매매') {
+  if (dealType === '매매') {
     var v = getVal('f_매매가');
     return v ? '매매 ' + Number(v).toLocaleString() + '만원' : '매매';
   }
-  if (t === '전세') {
+  if (dealType === '전세') {
     var v2 = getVal('f_보증금_전세');
     return v2 ? '전세 ' + Number(v2).toLocaleString() + '만원' : '전세';
   }
-  if (t === '연세') {
+  if (dealType === '연세') {
     var v3 = getVal('f_연세');
     return v3 ? '연세 ' + Number(v3).toLocaleString() + '만원' : '연세';
   }
-  if (t === '월세') {
+  if (dealType === '월세') {
     var b1 = getVal('f_보증금_월세') || '0';
     var m1 = getVal('f_월세') || '0';
     return '보증금' + Number(b1).toLocaleString() + '/월세' + Number(m1).toLocaleString();
   }
-  if (t === '단기') {
+  if (dealType === '단기') {
     var b2 = getVal('f_보증금_단기') || '0';
     var m2 = getVal('f_월세_단기') || '0';
     return '단기 보증금' + Number(b2).toLocaleString() + '/월세' + Number(m2).toLocaleString();
   }
   return '';
+}
+
+function formatDealPrice() {
+  var deals = getSelectedDeals();
+  if (!deals.length) return '';
+  return formatDealPriceForType(deals[0].type);
 }
 
 function getSelectedDeals() {
@@ -1314,7 +1293,8 @@ function getSelectedDeals() {
   return deals;
 }
 
-function generatePropertyName() {
+// 특정 거래유형에 대한 매물명 생성
+function generatePropertyNameForDeal(dealType) {
   var 매물유형 = getVal('f_매물유형');
   var 매물유형상세 = getVal('f_매물유형상세');
   var 지번 = buildJibunStr();
@@ -1334,12 +1314,15 @@ function generatePropertyName() {
     var 평 = sqmToPyeong(대지);
     if (평) parts.push(평 + '평');
 
-    var 매매가 = getVal('f_매매가');
-    if (매매가) {
-      parts.push(Number(매매가).toLocaleString() + '만원');
-      if (평 && parseFloat(평) > 0) {
-        var 평당 = Math.round(Number(매매가) / parseFloat(평));
-        parts.push(평당.toLocaleString() + '만원/평');
+    var dealStr = formatDealPriceForType(dealType);
+    if (dealStr) {
+      parts.push(dealStr);
+      if (dealType === '매매') {
+        var 매매가 = getVal('f_매매가');
+        if (매매가 && 평 && parseFloat(평) > 0) {
+          var 평당 = Math.round(Number(매매가) / parseFloat(평));
+          parts.push(평당.toLocaleString() + '만원/평');
+        }
       }
     }
   }
@@ -1347,8 +1330,8 @@ function generatePropertyName() {
     if (매물유형상세) parts.push(매물유형상세);
     if (지번) parts.push(지번);
 
-    var dealStr = formatDealPrice();
-    if (dealStr) parts.push(dealStr);
+    var dealStr2 = formatDealPriceForType(dealType);
+    if (dealStr2) parts.push(dealStr2);
 
     var 전용 = getVal('f_전용');
     var 평2 = sqmToPyeong(전용);
@@ -1380,8 +1363,8 @@ function generatePropertyName() {
     var 평3 = sqmToPyeong(전용2);
     if (평3) parts.push(평3 + '평');
 
-    var dealStr2 = formatDealPrice();
-    if (dealStr2) parts.push(dealStr2);
+    var dealStr3 = formatDealPriceForType(dealType);
+    if (dealStr3) parts.push(dealStr3);
   }
   else if (매물유형 === '공장창고') {
     if (매물유형상세) parts.push(매물유형상세);
@@ -1395,11 +1378,17 @@ function generatePropertyName() {
     var 평5 = sqmToPyeong(연면적);
     if (평5) parts.push('연면적' + 평5 + '평');
 
-    var dealStr3 = formatDealPrice();
-    if (dealStr3) parts.push(dealStr3);
+    var dealStr4 = formatDealPriceForType(dealType);
+    if (dealStr4) parts.push(dealStr4);
   }
 
   return parts.join(' ');
+}
+
+function generatePropertyName() {
+  var deals = getSelectedDeals();
+  if (!deals.length) return '';
+  return generatePropertyNameForDeal(deals[0].type);
 }
 
 // ============================================================
@@ -1584,12 +1573,10 @@ if (btnSaveAdd) {
     var isEdit = !!currentEditPropertyId;
 
     // ===== 필수 검증 =====
-    var 매물명 = getVal('f_매물명').trim();
     var 매물유형 = getVal('f_매물유형');
     var 소재지 = getVal('f_소재지');
     var 좌표 = getVal('f_좌표').trim();
 
-    if (!매물명) { alert('매물명을 입력하세요'); return; }
     if (!매물유형) { alert('매물유형을 선택하세요'); return; }
     if (!소재지) { alert('소재지를 선택하세요'); return; }
     if (!좌표) { alert('좌표 자동 조회를 먼저 실행하세요'); return; }
@@ -1615,7 +1602,7 @@ if (btnSaveAdd) {
       }
     }
 
-    // ===== 거래 조건 검증 =====
+    // ===== 거래 조건 =====
     var dealTypes = [];
     ['매매', '전세', '연세', '월세', '단기'].forEach(function(t) {
       var cb = document.getElementById('deal_' + t);
@@ -1627,134 +1614,256 @@ if (btnSaveAdd) {
       return;
     }
 
-    // ===== 저장 데이터 준비 =====
-    var params = {};
-
-    params['매물명'] = 매물명;
-    params['매물유형'] = 매물유형;
-    params['매물유형상세'] = getVal('f_매물유형상세');
-    params['매물상태'] = getVal('f_매물상태');
-
-    params['소재지'] = 소재지;
-    params['산'] = getVal('f_산');
-    params['본번'] = getVal('f_본번').trim();
-    params['부번'] = getVal('f_부번').trim();
-    params['지번주소'] = getVal('f_지번주소');
-    params['좌표'] = 좌표;
-
-    params['고객ID'] = 고객ID;
-    if (!isEdit && 신규고객) {
-      params['신규고객'] = 'true';
-      params['신규고객명'] = 신규고객명;
-      params['신규고객연락처'] = getVal('f_신규고객연락처');
-      params['신규고객유형'] = getVal('f_신규고객유형');
-      params['신규고객거래유형'] = getVal('f_신규고객거래유형');
-    }
-
-    var mainDeal = dealTypes[0];
-    params['거래유형'] = mainDeal;
-
-    // 다른 거래유형의 값은 빈값으로 초기화
-    params['매매가'] = '';
-    params['보증금'] = '';
-    params['연세'] = '';
-    params['월세'] = '';
-
-    if (mainDeal === '매매') {
-      params['매매가'] = getVal('f_매매가');
-    } else if (mainDeal === '전세') {
-      params['보증금'] = getVal('f_보증금_전세');
-    } else if (mainDeal === '연세') {
-      params['연세'] = getVal('f_연세');
-    } else if (mainDeal === '월세') {
-      params['보증금'] = getVal('f_보증금_월세');
-      params['월세'] = getVal('f_월세');
-    } else if (mainDeal === '단기') {
-      params['보증금'] = getVal('f_보증금_단기');
-      params['월세'] = getVal('f_월세_단기');
-    }
-
-    params['관리비'] = getVal('f_관리비');
-    params['권리금'] = getVal('f_권리금');
-
-    // 유형별 상세
-    ['f_대지', 'f_용도지역', 'f_지구구역', 'f_연면적', 'f_전용', 'f_공급', 'f_해당층총층',
-     'f_현업종', 'f_추천업종', 'f_임대현황', 'f_사용전력', 'f_층고',
-     'f_방', 'f_욕실', 'f_건축물용도', 'f_건물명', 'f_해당동', 'f_호수',
-     'f_방향', 'f_주차', 'f_세대수', 'f_사용승인일', 'f_특수구조', 'f_특수구조상세',
-     'f_반려동물', 'f_엘리베이터'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) {
-        var key = id.replace('f_', '');
-        var keyMap = {
-          '특수구조상세': '특수구조(상세)',
-          '지구구역': '지구.구역',
-          '해당층총층': '해당층/총층'
-        };
-        params[keyMap[key] || key] = el.value;
-      }
-    });
-
-    params['블로그링크'] = getVal('f_블로그링크');
-    params['내용'] = getVal('f_내용');
-
-    // ===== 전송 =====
-    btn.disabled = true;
-    btn.textContent = isEdit ? '수정 중...' : '저장 중...';
-
-    var action = isEdit ? 'updateProperty' : 'addProperty';
+    // ===== 수정 모드: 1개만 수정 =====
     if (isEdit) {
-      params['매물ID'] = currentEditPropertyId;
+      savePropertySingle(btn, dealTypes[0], true);
+      return;
+    }
+
+    // ===== 등록 모드 =====
+    if (dealTypes.length === 1) {
+      savePropertySingle(btn, dealTypes[0], false);
+    } else {
+      savePropertyMulti(btn, dealTypes, 신규고객, 신규고객명);
+    }
+  });
+}
+
+// ============================================================
+// 단일 매물 저장 (등록/수정)
+// ============================================================
+function savePropertySingle(btn, dealType, isEdit) {
+  var params = buildPropertyParams(dealType, isEdit);
+  params['매물명'] = generatePropertyNameForDeal(dealType);
+
+  if (!params['매물명']) {
+    alert('매물명을 생성할 수 없습니다. 필수 정보를 확인하세요');
+    return;
+  }
+
+  if (isEdit) {
+    params['매물ID'] = currentEditPropertyId;
+  }
+
+  btn.disabled = true;
+  btn.textContent = isEdit ? '수정 중...' : '저장 중...';
+
+  var action = isEdit ? 'updateProperty' : 'addProperty';
+  var queryString = Object.keys(params).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+
+  var url = API_URL + '?action=' + action
+          + '&email=' + encodeURIComponent(authEmail) + '&' + queryString;
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      btn.textContent = isEdit ? '수정 저장' : '저장';
+
+      if (data.error) {
+        alert((isEdit ? '수정' : '저장') + ' 실패: ' + data.error);
+        return;
+      }
+
+      if (isEdit) {
+        alert('수정 완료!');
+      } else {
+        alert('저장 완료!\n매물ID: ' + data.매물ID + '\n고객ID: ' + data.고객ID);
+      }
+
+      closeAddModal();
+
+      fetchAllData().then(function() {
+        renderList();
+        renderMarkers();
+        if (currentTab === 'customer') renderCustomerList();
+
+        if (isEdit) {
+          var updated = allProperties.find(function(x) { return x.매물ID === data.매물ID; });
+          if (updated) {
+            selectedId = data.매물ID;
+            var isMobile = window.innerWidth <= 1023;
+            if (isMobile) showBottomSheet(updated);
+            else showDetailPanel(updated);
+          }
+        }
+      });
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = isEdit ? '수정 저장' : '저장';
+      alert('오류: ' + err.message);
+    });
+}
+
+// ============================================================
+// 다중 매물 저장 (거래유형별 여러 개)
+// ============================================================
+function savePropertyMulti(btn, dealTypes, isNewCustomer, newCustomerName) {
+  btn.disabled = true;
+  btn.textContent = '저장 중 (0/' + dealTypes.length + ')...';
+
+  var results = [];
+  var firstCustomerId = null;
+  var index = 0;
+
+  function saveNext() {
+    if (index >= dealTypes.length) {
+      btn.disabled = false;
+      btn.textContent = '저장';
+
+      var msg = '저장 완료!\n\n';
+      results.forEach(function(r) {
+        msg += '· ' + r.dealType + ': ' + r.매물ID + '\n';
+      });
+      msg += '\n고객ID: ' + firstCustomerId;
+      alert(msg);
+
+      closeAddModal();
+      fetchAllData().then(function() {
+        renderList();
+        renderMarkers();
+        if (currentTab === 'customer') renderCustomerList();
+      });
+      return;
+    }
+
+    var dealType = dealTypes[index];
+    btn.textContent = '저장 중 (' + (index + 1) + '/' + dealTypes.length + ')...';
+
+    var params = buildPropertyParams(dealType, false);
+    params['매물명'] = generatePropertyNameForDeal(dealType);
+    params['거래유형'] = dealType;
+
+    if (index > 0 && firstCustomerId) {
+      params['고객ID'] = firstCustomerId;
+      params['신규고객'] = '';
+      params['신규고객명'] = '';
+      params['신규고객연락처'] = '';
+      params['신규고객유형'] = '';
+      params['신규고객거래유형'] = '';
     }
 
     var queryString = Object.keys(params).map(function(k) {
       return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
     }).join('&');
 
-    var url = API_URL + '?action=' + action
+    var url = API_URL + '?action=addProperty'
             + '&email=' + encodeURIComponent(authEmail) + '&' + queryString;
 
     fetch(url)
       .then(function(r) { return r.json(); })
       .then(function(data) {
-        btn.disabled = false;
-        btn.textContent = isEdit ? '수정 저장' : '저장';
-
         if (data.error) {
-          alert((isEdit ? '수정' : '저장') + ' 실패: ' + data.error);
+          alert(dealType + ' 저장 실패: ' + data.error + '\n\n이전에 저장된 매물은 유지됩니다.');
+          btn.disabled = false;
+          btn.textContent = '저장';
+          fetchAllData().then(function() {
+            renderList();
+            renderMarkers();
+          });
           return;
         }
 
-        if (isEdit) {
-          alert('수정 완료!');
-        } else {
-          alert('저장 완료!\n매물ID: ' + data.매물ID + '\n고객ID: ' + data.고객ID);
-        }
-
-        closeAddModal();
-
-        fetchAllData().then(function() {
-          renderList();
-          renderMarkers();
-
-          // 수정이면 상세 다시 표시
-          if (isEdit) {
-            var updated = allProperties.find(function(x) { return x.매물ID === data.매물ID; });
-            if (updated) {
-              selectedId = data.매물ID;
-              var isMobile = window.innerWidth <= 1023;
-              if (isMobile) showBottomSheet(updated);
-              else showDetailPanel(updated);
-            }
-          }
+        results.push({
+          dealType: dealType,
+          매물ID: data.매물ID,
+          고객ID: data.고객ID
         });
+
+        if (!firstCustomerId) firstCustomerId = data.고객ID;
+
+        index++;
+        saveNext();
       })
       .catch(function(err) {
-        btn.disabled = false;
-        btn.textContent = isEdit ? '수정 저장' : '저장';
         alert('오류: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = '저장';
       });
+  }
+
+  saveNext();
+}
+
+// ============================================================
+// 매물 파라미터 구성 (공통)
+// ============================================================
+function buildPropertyParams(dealType, isEdit) {
+  var params = {};
+
+  params['매물유형'] = getVal('f_매물유형');
+  params['매물유형상세'] = getVal('f_매물유형상세');
+  params['매물상태'] = getVal('f_매물상태');
+
+  params['소재지'] = getVal('f_소재지');
+  params['산'] = getVal('f_산');
+  params['본번'] = getVal('f_본번').trim();
+  params['부번'] = getVal('f_부번').trim();
+  params['지번주소'] = getVal('f_지번주소');
+  params['좌표'] = getVal('f_좌표');
+  params['추가필지'] = '';
+
+  var 고객ID = getVal('f_고객ID');
+  params['고객ID'] = 고객ID;
+
+  if (!isEdit && !고객ID) {
+    var newForm = document.getElementById('newCustomerForm');
+    if (!newForm.classList.contains('hidden')) {
+      params['신규고객'] = 'true';
+      params['신규고객명'] = getVal('f_신규고객명');
+      params['신규고객연락처'] = getVal('f_신규고객연락처');
+      params['신규고객유형'] = getVal('f_신규고객유형');
+      params['신규고객거래유형'] = getVal('f_신규고객거래유형');
+    }
+  }
+
+  params['거래유형'] = dealType;
+  params['매매가'] = '';
+  params['보증금'] = '';
+  params['연세'] = '';
+  params['월세'] = '';
+
+  if (dealType === '매매') {
+    params['매매가'] = getVal('f_매매가');
+  } else if (dealType === '전세') {
+    params['보증금'] = getVal('f_보증금_전세');
+  } else if (dealType === '연세') {
+    params['연세'] = getVal('f_연세');
+  } else if (dealType === '월세') {
+    params['보증금'] = getVal('f_보증금_월세');
+    params['월세'] = getVal('f_월세');
+  } else if (dealType === '단기') {
+    params['보증금'] = getVal('f_보증금_단기');
+    params['월세'] = getVal('f_월세_단기');
+  }
+
+  params['관리비'] = getVal('f_관리비');
+  params['권리금'] = getVal('f_권리금');
+
+  ['f_대지', 'f_용도지역', 'f_지구구역', 'f_연면적', 'f_전용', 'f_공급', 'f_해당층총층',
+   'f_현업종', 'f_추천업종', 'f_임대현황', 'f_사용전력', 'f_층고',
+   'f_방', 'f_욕실', 'f_건축물용도', 'f_건물명', 'f_해당동', 'f_호수',
+   'f_방향', 'f_주차', 'f_세대수', 'f_사용승인일', 'f_특수구조', 'f_특수구조상세',
+   'f_반려동물', 'f_엘리베이터'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      var key = id.replace('f_', '');
+      var keyMap = {
+        '특수구조상세': '특수구조(상세)',
+        '지구구역': '지구.구역',
+        '해당층총층': '해당층/총층'
+      };
+      params[keyMap[key] || key] = el.value;
+    }
   });
+
+  params['블로그링크'] = getVal('f_블로그링크');
+  params['내용'] = getVal('f_내용');
+
+  return params;
 }
 
 // ============================================================
@@ -1774,12 +1883,11 @@ function formatPhoneNumber(input) {
 }
 
 function bindPhoneFormat() {
-  // 포맷팅 적용할 연락처 필드들
   var phoneFieldIds = [
-    'f_신규고객연락처',   // 매물 등록 - 신규 고객
-    'ce_연락처',          // 고객 수정 - 연락처
-    'ce_소유주연락처',    // 고객 수정 - 소유주연락처
-    'ce_추가연락처'       // 고객 수정 - 추가연락처
+    'f_신규고객연락처',
+    'ce_연락처',
+    'ce_소유주연락처',
+    'ce_추가연락처'
   ];
 
   phoneFieldIds.forEach(function(id) {
@@ -1790,17 +1898,14 @@ function bindPhoneFormat() {
 
     el.addEventListener('input', function() {
       var val = this.value;
-      // 이름(한글)이 있으면 스킵 (검색어 입력 고려)
       if (/[ㄱ-ㅎ가-힣a-zA-Z]/.test(val)) return;
-      // 숫자/하이픈만 있으면 전화번호로 간주하고 포맷
       formatPhoneNumber(this);
     });
   });
 }
 
-
 // ============================================================
-// 🖊️ 매물 상세 - 수정/삭제 버튼 이벤트 연결
+// 🖊️ 매물 상세 - 수정/삭제 버튼 이벤트
 // ============================================================
 function bindDetailActionButtons(container) {
   container.querySelectorAll('.btn-edit-prop').forEach(function(btn) {
@@ -1828,7 +1933,6 @@ function openEditModal(propertyId) {
 
   currentEditPropertyId = propertyId;
 
-  // 모달 초기화
   resetAddForm();
   document.getElementById('addPropertyModal').classList.remove('hidden');
 
@@ -1836,32 +1940,23 @@ function openEditModal(propertyId) {
   bindNameGenerationTriggers();
   bindPhoneFormat();
 
-  // 제목/버튼 텍스트 변경
-  document.querySelector('#addPropertyModal .modal-header h2').textContent = '매물 수정';
+  var h2 = document.querySelector('#addPropertyModal .modal-header h2');
+  if (h2) h2.textContent = '매물 수정';
   document.getElementById('btnSaveAdd').textContent = '수정 저장';
 
-  // 매물유형별 조건부 필드 생성
   renderTypeSpecificFields(p.매물유형);
-
-  // 값 채우기
   fillEditForm(p);
 
   document.getElementById('geocodeStatus').textContent = '';
 }
 
-// ============================================================
-// 폼에 매물 값 채우기
-// ============================================================
 function fillEditForm(p) {
-  // 매물명 (수동 수정으로 표시 → 자동 재생성 방지)
   document.getElementById('f_매물명').value = p.매물명 || '';
   propertyNameManuallyEdited = true;
   updateNameHint();
 
-  // 기본 정보
   document.getElementById('f_매물유형').value = p.매물유형 || '';
 
-  // 매물유형상세 드롭다운 채우기
   var detailSel = document.getElementById('f_매물유형상세');
   detailSel.innerHTML = '<option value="">선택</option>';
   if (p.매물유형 && TYPE_DETAIL_MAP[p.매물유형]) {
@@ -1875,25 +1970,20 @@ function fillEditForm(p) {
   }
 
   var statusSel = document.getElementById('f_매물상태');
-  if (p.매물상태) {
-    statusSel.value = p.매물상태;
-  }
+  if (p.매물상태) statusSel.value = p.매물상태;
 
-  // 위치
   document.getElementById('f_산').value = p.산 || '';
   document.getElementById('f_본번').value = p.본번 || '';
   document.getElementById('f_부번').value = p.부번 || '';
   document.getElementById('f_지번주소').value = p.지번주소 || '';
   document.getElementById('f_좌표').value = p.좌표 || '';
 
-  // 소재지 Combobox
   if (locationCombobox.input) {
     locationCombobox.input.value = p.소재지 || '';
     locationCombobox.selectedValue = p.소재지 || '';
     locationCombobox.input.dataset.value = p.소재지 || '';
   }
 
-  // 고객
   if (p.고객ID) {
     var c = allCustomers.find(function(x) { return String(x.고객ID) === String(p.고객ID); });
     if (c) {
@@ -1905,24 +1995,18 @@ function fillEditForm(p) {
     }
   }
 
-  // 유형별 상세 필드 (DOM 생성 후 값 채우기)
   setTimeout(function() {
     fillTypeSpecificFields(p);
   }, 50);
 
-  // 거래 조건
   fillDealConditions(p);
 
-  // 기타
   document.getElementById('f_관리비').value = p.관리비 || '';
   document.getElementById('f_권리금').value = p.권리금 || '';
   document.getElementById('f_블로그링크').value = p.블로그링크 || '';
   document.getElementById('f_내용').value = p.내용 || '';
 }
 
-// ============================================================
-// 유형별 상세 필드 값 채우기
-// ============================================================
 function fillTypeSpecificFields(p) {
   var fieldMap = {
     'f_대지': p.대지,
@@ -1961,13 +2045,9 @@ function fillTypeSpecificFields(p) {
   });
 }
 
-// ============================================================
-// 거래 조건 채우기
-// ============================================================
 function fillDealConditions(p) {
   var t = p.거래유형 || '';
 
-  // 모든 체크박스 해제 + 입력 비활성
   ['매매', '전세', '연세', '월세', '단기'].forEach(function(dt) {
     var cb = document.getElementById('deal_' + dt);
     if (cb) {
@@ -1982,7 +2062,6 @@ function fillDealConditions(p) {
 
   if (!t) return;
 
-  // 해당 거래유형만 체크
   var cb = document.getElementById('deal_' + t);
   if (!cb) return;
 
@@ -2034,18 +2113,15 @@ function deletePropertyConfirm(propertyId) {
       }
       alert('삭제 완료');
 
-      // 상세 패널 닫기
       document.getElementById('detailPanel').classList.add('hidden');
       document.getElementById('bottomSheet').classList.add('hidden');
 
-      setTimeout(function() {
-        if (map) map.relayout();
-      }, 100);
+      setTimeout(function() { if (map) map.relayout(); }, 100);
 
-      // 새로고침
       fetchAllData().then(function() {
         renderList();
         renderMarkers();
+        if (currentTab === 'customer') renderCustomerList();
       });
     })
     .catch(function(err) {
@@ -2053,15 +2129,11 @@ function deletePropertyConfirm(propertyId) {
     });
 }
 
-
 // ============================================================
 // 👤 고객관리
 // ============================================================
 var selectedCustomerId = null;
 
-// ============================================================
-// 고객 리스트 렌더
-// ============================================================
 function renderCustomerList() {
   var container = document.getElementById('customerListContainer');
   if (!container) return;
@@ -2135,19 +2207,14 @@ function getFilteredCustomers() {
   var keyword = searchEl.value.trim().toLowerCase();
 
   return allCustomers.filter(function(c) {
-    // 고객유형 필터
     if (type && c.고객유형 !== type) return false;
 
-    // 거래유형 필터
     if (deal === '__empty__') {
-      // "기타": 거래유형이 비어있는 고객만
       if (c.거래유형) return false;
     } else if (deal) {
-      // 특정 거래유형
       if (c.거래유형 !== deal) return false;
     }
 
-    // 검색
     if (keyword) {
       var hay = ((c.고객명 || '') + ' ' + (c.연락처 || '') + ' ' + (c.소유주명 || '') + ' ' + (c.소유주연락처 || '')).toLowerCase();
       if (hay.indexOf(keyword) === -1) return false;
@@ -2164,7 +2231,6 @@ function bindCustomerFilters() {
   if (typeEl) {
     typeEl.addEventListener('change', function() {
       var type = this.value;
-      // 중개사/분양사 선택 시 거래유형 자동 초기화
       if ((type === '중개사' || type === '분양사') && dealEl) {
         dealEl.value = '';
       }
@@ -2174,7 +2240,6 @@ function bindCustomerFilters() {
   if (dealEl) dealEl.addEventListener('change', renderCustomerList);
   if (searchEl) searchEl.addEventListener('input', debounce(renderCustomerList, 250));
 }
-
 
 function getOwnedProperties(customerId) {
   if (!customerId) return [];
@@ -2203,9 +2268,7 @@ function showCustomerDetail(c) {
       currentTab = 'property';
       document.getElementById('propertyPane').classList.remove('hidden');
       document.getElementById('customerPane').classList.add('hidden');
-      setTimeout(function() {
-        focusProperty(propId);
-      }, 100);
+      setTimeout(function() { focusProperty(propId); }, 100);
     });
   });
 
@@ -2353,14 +2416,6 @@ function bindCustomerDetailClose() {
   }
 }
 
-
-
-// 초기 바인딩
-bindCustomerFilters();
-bindCustomerDetailClose();
-
-
-
 // ============================================================
 // ✏️ 고객 수정 모달
 // ============================================================
@@ -2389,7 +2444,6 @@ function openCustomerEditModal(c) {
   document.getElementById('ce_메모').value = c.메모 || '';
   document.getElementById('ce_문의이력').value = c.문의이력 || '';
 
-  // ⭐ 연락처 자동 포맷 바인딩
   bindPhoneFormat();
 
   document.getElementById('customerEditModal').classList.remove('hidden');
@@ -2455,9 +2509,7 @@ function saveCustomerEdit() {
       fetchAllData().then(function() {
         renderCustomerList();
         var updated = allCustomers.find(function(x) { return String(x.고객ID) === String(고객ID); });
-        if (updated) {
-          showCustomerDetail(updated);
-        }
+        if (updated) showCustomerDetail(updated);
       });
     })
     .catch(function(err) {
@@ -2467,3 +2519,8 @@ function saveCustomerEdit() {
     });
 }
 
+// ============================================================
+// 초기 바인딩
+// ============================================================
+bindCustomerFilters();
+bindCustomerDetailClose();
