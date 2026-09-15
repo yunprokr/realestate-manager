@@ -395,8 +395,165 @@
     </div>
   </div>
 </div>
+<!-- ===== 고객 수정 모달 ===== -->
+<div id="customerEditModal" class="modal hidden">
+  <div class="modal-box modal-large">
+    <div class="modal-header">
+      <h2>고객 수정</h2>
+      <button class="modal-close" id="closeCustomerEditModal">✕</button>
+    </div>
 
-<script>
+    <div class="modal-body">
+      <input type="hidden" id="ce_고객ID">
+
+      <section class="form-section">
+        <h3>기본 정보</h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>고객명 <span class="req">*</span></label>
+            <input type="text" id="ce_고객명">
+          </div>
+          <div class="form-field">
+            <label>고객유형</label>
+            <select id="ce_고객유형">
+              <option>일반</option>
+              <option>중개사</option>
+              <option>분양사</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>연락처</label>
+            <input type="text" id="ce_연락처" placeholder="010-0000-0000">
+          </div>
+          <div class="form-field">
+            <label>통신사</label>
+            <input type="text" id="ce_통신사">
+          </div>
+          <div class="form-field">
+            <label>추가연락처</label>
+            <input type="text" id="ce_추가연락처">
+          </div>
+          <div class="form-field">
+            <label>관계</label>
+            <input type="text" id="ce_관계">
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>소유주 정보</h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>소유주명</label>
+            <input type="text" id="ce_소유주명">
+          </div>
+          <div class="form-field">
+            <label>소유주연락처</label>
+            <input type="text" id="ce_소유주연락처">
+          </div>
+          <div class="form-field">
+            <label>소유주 네이버ID</label>
+            <input type="text" id="ce_소유주네이버ID">
+          </div>
+          <div class="form-field">
+            <label>소유주통신사</label>
+            <input type="text" id="ce_소유주통신사">
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>상태 / 거래</h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>거래유형</label>
+            <select id="ce_거래유형">
+              <option value="">-</option>
+              <option>매도</option>
+              <option>매수</option>
+              <option>임대 전세</option>
+              <option>임대 연세</option>
+              <option>임대 월세</option>
+              <option>임대 단기</option>
+              <option>임차 전세</option>
+              <option>임차 연세</option>
+              <option>임차 월세</option>
+              <option>임차 단기</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>등급</label>
+            <select id="ce_등급">
+              <option value="">-</option>
+              <option>A</option>
+              <option>B</option>
+              <option>C</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label>고객상태</label>
+            <input type="text" id="ce_고객상태">
+          </div>
+          <div class="form-field">
+            <label>계약상태</label>
+            <input type="text" id="ce_계약상태">
+          </div>
+          <div class="form-field">
+            <label>유입경로</label>
+            <input type="text" id="ce_유입경로">
+          </div>
+          <div class="form-field">
+            <label>광고용이름</label>
+            <input type="text" id="ce_광고용이름">
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>희망 조건</h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>희망매물종류</label>
+            <input type="text" id="ce_희망매물종류">
+          </div>
+          <div class="form-field">
+            <label>희망지역</label>
+            <input type="text" id="ce_희망지역">
+          </div>
+          <div class="form-field">
+            <label>희망가격 최소 (만원)</label>
+            <input type="number" id="ce_희망가격_최소">
+          </div>
+          <div class="form-field">
+            <label>희망가격 최대 (만원)</label>
+            <input type="number" id="ce_희망가격_최대">
+          </div>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <h3>메모</h3>
+        <div class="form-grid">
+          <div class="form-field full">
+            <label>메모</label>
+            <textarea id="ce_메모" rows="3"></textarea>
+          </div>
+          <div class="form-field full">
+            <label>문의이력</label>
+            <textarea id="ce_문의이력" rows="2"></textarea>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" id="btnCancelCustomerEdit">취소</button>
+      <button type="button" class="btn-primary" id="btnSaveCustomerEdit">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>      ← 여기 기존 <script> 가 있어야 함
   window.__KAKAO_JS_KEY = '282429c788a8c12adc1b06823c873808';
   window.__GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwbOpGmInOycbnztGRDV-dF19eNCrjFvEC7EskGngpuBSamfUrsVwjCMB0N-l8NZmPY/exec';
 </script>
