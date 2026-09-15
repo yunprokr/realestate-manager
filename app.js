@@ -1195,17 +1195,17 @@ if (typeSelect) {
       });
     }
 
-    // ⭐ 권리금: 상가일 때만 표시
+        // ⭐ 권리금: 상가/공장창고일 때만 표시
     var 권리금Wrapper = document.getElementById('wrapper_권리금');
     if (권리금Wrapper) {
-      if (type === '상가') {
+      if (type === '상가' || type === '공장창고') {
         권리금Wrapper.style.display = '';
       } else {
         권리금Wrapper.style.display = 'none';
         document.getElementById('f_권리금').value = '';
       }
     }
-
+    
     // ⭐ 관리비: 토지가 아닐 때만 표시
     var 관리비Wrapper = document.getElementById('wrapper_관리비');
     if (관리비Wrapper) {
@@ -2142,7 +2142,7 @@ function fillEditForm(p) {
   // ⭐ 수정 모드에서 wrapper 표시 상태 반영
   var 권리금Wrapper = document.getElementById('wrapper_권리금');
   if (권리금Wrapper) {
-    if (p.매물유형 === '상가') {
+    if (p.매물유형 === '상가' || p.매물유형 === '공장창고') {
       권리금Wrapper.style.display = '';
     } else {
       권리금Wrapper.style.display = 'none';
