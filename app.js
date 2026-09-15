@@ -2723,3 +2723,4 @@ function saveCustomerAdd() {
   if (cancelBtn) cancelBtn.addEventListener('click', closeCustomerAddModal);
   if (saveBtn) saveBtn.addEventListener('click', saveCustomerAdd);
 })();
+
