@@ -2123,8 +2123,19 @@ function getFilteredCustomers() {
   var keyword = searchEl.value.trim().toLowerCase();
 
   return allCustomers.filter(function(c) {
+    // 고객유형 필터
     if (type && c.고객유형 !== type) return false;
-    if (deal && c.거래유형 !== deal) return false;
+
+    // 거래유형 필터
+    if (deal === '__empty__') {
+      // "기타": 거래유형이 비어있는 고객만
+      if (c.거래유형) return false;
+    } else if (deal) {
+      // 특정 거래유형
+      if (c.거래유형 !== deal) return false;
+    }
+
+    // 검색
     if (keyword) {
       var hay = ((c.고객명 || '') + ' ' + (c.연락처 || '') + ' ' + (c.소유주명 || '') + ' ' + (c.소유주연락처 || '')).toLowerCase();
       if (hay.indexOf(keyword) === -1) return false;
@@ -2138,10 +2149,20 @@ function bindCustomerFilters() {
   var dealEl = document.getElementById('customerFilterDeal');
   var searchEl = document.getElementById('customerSearchInput');
 
-  if (typeEl) typeEl.addEventListener('change', renderCustomerList);
+  if (typeEl) {
+    typeEl.addEventListener('change', function() {
+      var type = this.value;
+      // 중개사/분양사 선택 시 거래유형 자동 초기화
+      if ((type === '중개사' || type === '분양사') && dealEl) {
+        dealEl.value = '';
+      }
+      renderCustomerList();
+    });
+  }
   if (dealEl) dealEl.addEventListener('change', renderCustomerList);
   if (searchEl) searchEl.addEventListener('input', debounce(renderCustomerList, 250));
 }
+
 
 function getOwnedProperties(customerId) {
   if (!customerId) return [];
