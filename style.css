@@ -1071,4 +1071,134 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
 .btn-delete-customer:hover { background: #C0392B; }
 
 
+/* 고객 등록 버튼 바 */
+.customer-add-bar {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+}
+.customer-add-bar .btn-primary {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+}
 
+
+
+// ============================================================
+// 👤 고객 별도 등록
+// ============================================================
+var addCustomerBtn = document.getElementById('addCustomerBtn');
+if (addCustomerBtn) {
+  addCustomerBtn.addEventListener('click', openCustomerAddModal);
+}
+
+function openCustomerAddModal() {
+  // 폼 초기화
+  var modal = document.getElementById('customerAddModal');
+  modal.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(function(el) {
+    el.value = '';
+  });
+  modal.querySelectorAll('select').forEach(function(el) {
+    el.selectedIndex = 0;
+  });
+
+  // 연락처 자동 포맷 바인딩
+  bindPhoneFormatCa();
+
+  modal.classList.remove('hidden');
+}
+
+function closeCustomerAddModal() {
+  document.getElementById('customerAddModal').classList.add('hidden');
+}
+
+// 연락처 자동 포맷 (고객 등록 모달용)
+function bindPhoneFormatCa() {
+  ['ca_연락처', 'ca_소유주연락처'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.dataset.phoneBound === '1') return;
+    el.dataset.phoneBound = '1';
+
+    el.addEventListener('input', function() {
+      var val = this.value;
+      if (/[ㄱ-ㅎ가-힣a-zA-Z]/.test(val)) return;
+      formatPhoneNumber(this);
+    });
+  });
+}
+
+// 고객 등록 저장
+function saveCustomerAdd() {
+  var btn = document.getElementById('btnSaveCustomerAdd');
+  var 고객명 = document.getElementById('ca_고객명').value.trim();
+
+  if (!고객명) { alert('고객명을 입력하세요'); return; }
+
+  var params = {
+    고객명: 고객명,
+    고객유형: document.getElementById('ca_고객유형').value,
+    연락처: document.getElementById('ca_연락처').value.trim(),
+    통신사: document.getElementById('ca_통신사').value.trim(),
+    소유주명: document.getElementById('ca_소유주명').value.trim(),
+    소유주연락처: document.getElementById('ca_소유주연락처').value.trim(),
+    거래유형: document.getElementById('ca_거래유형').value,
+    등급: document.getElementById('ca_등급').value,
+    유입경로: document.getElementById('ca_유입경로').value.trim(),
+    광고용이름: document.getElementById('ca_광고용이름').value.trim(),
+    희망매물종류: document.getElementById('ca_희망매물종류').value.trim(),
+    희망지역: document.getElementById('ca_희망지역').value.trim(),
+    희망가격_최소: document.getElementById('ca_희망가격_최소').value,
+    희망가격_최대: document.getElementById('ca_희망가격_최대').value,
+    메모: document.getElementById('ca_메모').value.trim()
+  };
+
+  btn.disabled = true;
+  btn.textContent = '저장 중...';
+
+  var queryString = Object.keys(params).map(function(k) {
+    return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+
+  var url = API_URL + '?action=addCustomerStandalone&email=' + encodeURIComponent(authEmail) + '&' + queryString;
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      btn.disabled = false;
+      btn.textContent = '저장';
+
+      if (data.error) {
+        alert('등록 실패: ' + data.error);
+        return;
+      }
+
+      alert('고객 등록 완료!\n고객ID: ' + data.고객ID);
+      closeCustomerAddModal();
+
+      fetchAllData().then(function() {
+        renderCustomerList();
+      });
+    })
+    .catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = '저장';
+      alert('오류: ' + err.message);
+    });
+}
+
+// ============================================================
+// 고객 등록 모달 버튼 바인딩
+// ============================================================
+(function() {
+  var closeBtn = document.getElementById('closeCustomerAddModal');
+  var cancelBtn = document.getElementById('btnCancelCustomerAdd');
+  var saveBtn = document.getElementById('btnSaveCustomerAdd');
+
+  if (closeBtn) closeBtn.addEventListener('click', closeCustomerAddModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeCustomerAddModal);
+  if (saveBtn) saveBtn.addEventListener('click', saveCustomerAdd);
+})();
+
+    
