@@ -264,6 +264,8 @@ function bindTabs() {
       document.getElementById('customerPane').classList.toggle('hidden', currentTab !== 'customer');
       if (currentTab === 'property') {
         renderList(); renderMarkers();
+      } else if (currentTab === 'customer') {
+        renderCustomerList();
       }
     });
   });
