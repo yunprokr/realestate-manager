@@ -2402,7 +2402,7 @@ function bindCustomerDetailClose() {
       document.getElementById('customerDetailModal').classList.add('hidden');
     });
   }
-  if (editBtn) {
+    if (editBtn) {
     editBtn.addEventListener('click', function() {
       var c = allCustomers.find(function(x) {
         return String(x.고객ID) === String(selectedCustomerId);
@@ -2410,6 +2410,19 @@ function bindCustomerDetailClose() {
       if (c) {
         document.getElementById('customerDetailModal').classList.add('hidden');
         openCustomerEditModal(c);
+      }
+    });
+  }
+
+  // ⭐ 고객 삭제 버튼
+  var delBtn = document.getElementById('btnDeleteCustomer');
+  if (delBtn) {
+    delBtn.addEventListener('click', function() {
+      var c = allCustomers.find(function(x) {
+        return String(x.고객ID) === String(selectedCustomerId);
+      });
+      if (c) {
+        deleteCustomerConfirm(c);
       }
     });
   }
@@ -2540,3 +2553,58 @@ function saveCustomerEdit() {
 // ============================================================
 bindCustomerFilters();
 bindCustomerDetailClose();
+
+
+
+// ============================================================
+// 🗑️ 고객 삭제
+// ============================================================
+function deleteCustomerConfirm(c) {
+  if (!c) { alert('고객 정보를 찾을 수 없습니다'); return; }
+
+  // 소유 매물 확인 (프론트엔드에서 먼저 체크)
+  var owned = getOwnedProperties(c.고객ID);
+  if (owned.length > 0) {
+    alert('이 고객은 소유 매물 ' + owned.length + '건이 있어 삭제할 수 없습니다.\n\n'
+      + '삭제하려면:\n'
+      + '1. 소유 매물을 먼저 삭제하거나\n'
+      + '2. 매물의 소유주를 다른 고객으로 변경하세요.');
+    return;
+  }
+
+  var confirmMsg = '정말 삭제하시겠습니까?\n\n'
+    + '고객명: ' + (c.고객명 || c.고객ID) + '\n'
+    + '연락처: ' + (c.연락처 || '-') + '\n\n'
+    + '⚠ 이 작업은 되돌릴 수 없습니다.';
+
+  if (!confirm(confirmMsg)) return;
+
+  var url = API_URL + '?action=deleteCustomer'
+          + '&고객ID=' + encodeURIComponent(c.고객ID)
+          + '&email=' + encodeURIComponent(authEmail);
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) {
+        // 소유 매물 있는 경우 백엔드에서 차단되면 안내
+        if (data.ownedCount) {
+          alert(data.message);
+        } else {
+          alert('삭제 실패: ' + data.error);
+        }
+        return;
+      }
+
+      alert('삭제 완료');
+      document.getElementById('customerDetailModal').classList.add('hidden');
+      selectedCustomerId = null;
+
+      fetchAllData().then(function() {
+        renderCustomerList();
+      });
+    })
+    .catch(function(err) {
+      alert('오류: ' + err.message);
+    });
+}
