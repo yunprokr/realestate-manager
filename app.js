@@ -1206,6 +1206,17 @@ if (typeSelect) {
       }
     }
 
+    // ⭐ 관리비포함항목: 토지가 아닐 때만 표시 (주택/상가/공장창고)
+    var 관리비포함Wrapper = document.getElementById('wrapper_관리비포함항목');
+    if (관리비포함Wrapper) {
+      if (type && type !== '토지') {
+        관리비포함Wrapper.style.display = '';
+      } else {
+        관리비포함Wrapper.style.display = 'none';
+        document.getElementById('f_관리비포함항목').value = '';
+      }
+    }
+
     renderTypeSpecificFields(type);
   });
 }
@@ -1226,10 +1237,10 @@ function renderTypeSpecificFields(type) {
   var grid = document.createElement('div');
   grid.className = 'form-grid';
 
-  if (type === '토지') {
+    if (type === '토지') {
     fields = [
       { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
-      { id: 'f_용도지역', label: '용도지역', type: 'text' },
+      { id: 'f_용도지역', label: '용도지역', type: 'text', list: '용도지역List', placeholder: '선택 또는 직접 입력' },
       { id: 'f_지구구역', label: '지구.구역', type: 'text' }
     ];
   } else if (type === '상가') {
@@ -1241,15 +1252,15 @@ function renderTypeSpecificFields(type) {
       { id: 'f_추천업종', label: '추천업종', type: 'text' },
       { id: 'f_임대현황', label: '임대현황', type: 'text' }
     ];
-  } else if (type === '공장창고') {
+    } else if (type === '공장창고') {
     fields = [
       { id: 'f_연면적', label: '연면적 (㎡)', type: 'number' },
       { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
       { id: 'f_사용전력', label: '사용전력 (kW)', type: 'number' },
       { id: 'f_층고', label: '층고 (m)', type: 'number' },
-      { id: 'f_용도지역', label: '용도지역', type: 'text' }
+      { id: 'f_용도지역', label: '용도지역', type: 'text', list: '용도지역List', placeholder: '선택 또는 직접 입력' }
     ];
-    } else if (type === '주택') {
+  } else if (type === '주택') {
     fields = [
       { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
       { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
@@ -1272,12 +1283,11 @@ function renderTypeSpecificFields(type) {
     ];
   }
 
-    fields.forEach(function(f) {
+      fields.forEach(function(f) {
     var div = document.createElement('div');
     div.className = 'form-field';
 
     if (f.type === 'select' && f.options) {
-      // 드롭다운
       var opts = '<option value="">선택</option>';
       f.options.forEach(function(opt) {
         opts += '<option value="' + opt + '">' + opt + '</option>';
@@ -1285,10 +1295,10 @@ function renderTypeSpecificFields(type) {
       div.innerHTML = '<label>' + f.label + '</label>'
         + '<select id="' + f.id + '">' + opts + '</select>';
     } else {
-      // 일반 input
       var placeholder = f.placeholder ? ' placeholder="' + f.placeholder + '"' : '';
+      var listAttr = f.list ? ' list="' + f.list + '"' : '';
       div.innerHTML = '<label>' + f.label + '</label>'
-        + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + '>';
+        + '<input type="' + (f.type || 'text') + '" id="' + f.id + '"' + placeholder + listAttr + '>';
     }
 
     grid.appendChild(div);
@@ -1920,8 +1930,9 @@ function buildPropertyParams(dealType, isEdit) {
     params['월세'] = getVal('f_월세_단기');
   }
 
-  params['관리비'] = getVal('f_관리비');
-  params['권리금'] = getVal('f_권리금');
+    params['관리비'] = getVal('f_관리비');
+   params['관리비포함항목'] = getVal('f_관리비포함항목');
+   params['권리금'] = getVal('f_권리금');
 
   ['f_대지', 'f_용도지역', 'f_지구구역', 'f_연면적', 'f_전용', 'f_공급', 'f_해당층총층',
    'f_현업종', 'f_추천업종', 'f_임대현황', 'f_사용전력', 'f_층고',
@@ -2112,10 +2123,31 @@ function fillEditForm(p) {
   fillDealConditions(p);
 
   document.getElementById('f_관리비').value = p.관리비 || '';
+  document.getElementById('f_관리비포함항목').value = p.관리비포함항목 || '';
   document.getElementById('f_권리금').value = p.권리금 || '';
   document.getElementById('f_블로그링크').value = p.블로그링크 || '';
   document.getElementById('f_내용').value = p.내용 || '';
+
+  // ⭐ 수정 모드에서 wrapper 표시 상태 반영
+  var 권리금Wrapper = document.getElementById('wrapper_권리금');
+  if (권리금Wrapper) {
+    if (p.매물유형 === '상가') {
+      권리금Wrapper.style.display = '';
+    } else {
+      권리금Wrapper.style.display = 'none';
+    }
+  }
+
+  var 관리비포함Wrapper = document.getElementById('wrapper_관리비포함항목');
+  if (관리비포함Wrapper) {
+    if (p.매물유형 && p.매물유형 !== '토지') {
+      관리비포함Wrapper.style.display = '';
+    } else {
+      관리비포함Wrapper.style.display = 'none';
+    }
+  }
 }
+
 
 function fillTypeSpecificFields(p) {
   var fieldMap = {
