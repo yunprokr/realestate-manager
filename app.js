@@ -131,7 +131,7 @@ function startApp() {
     bindTabs();
     bindFilters();
     bindDetailClose();
-    bindMapTypeToggle();   // ⭐ 추가
+    bindMapTypeToggle();
     renderList();
     renderMarkers();
     showLoading(false);
