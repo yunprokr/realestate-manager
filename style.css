@@ -1202,3 +1202,46 @@ function saveCustomerAdd() {
 })();
 
     
+/* ===== 지도/위성/지적 토글 ===== */
+.map-type-toggle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  display: flex;
+  z-index: 5;
+  overflow: hidden;
+}
+.map-type-btn {
+  padding: 8px 14px;
+  border: none;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #666;
+  transition: all .15s;
+  border-right: 1px solid #eee;
+}
+.map-type-btn:last-child { border-right: none; }
+.map-type-btn:hover { background: #f5f5f5; }
+.map-type-btn.active {
+  background: #4A90E2;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .map-type-toggle {
+    top: 8px;
+    left: 8px;
+  }
+  .map-type-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+
+  
