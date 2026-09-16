@@ -372,8 +372,11 @@ function getRepresentativePrice(p) {
   var t = p.거래유형 || '';
   if (t === '매매') return Number(p.매매가) || null;
   if (t === '전세') return Number(p.보증금) || null;
-  if (t === '연세') return Number(p.연세) || null;
-  if (t === '월세') return Number(p.월세) || null;
+  if (t === '연세') {
+    var b = Number(p.보증금) || 0;
+    var y = Number(p.연세) || 0;
+    return (b + y) || null;
+  }  if (t === '월세') return Number(p.월세) || null;
   if (t === '단기') return Number(p.월세) || null;
   return null;
 }
@@ -791,8 +794,12 @@ function formatPrice(p) {
   var t = p.거래유형 || '';
   if (t === '매매') return p.매매가 ? Number(p.매매가).toLocaleString() + '만원' : '가격문의';
   if (t === '전세') return p.보증금 ? '전세 ' + Number(p.보증금).toLocaleString() + '만원' : '가격문의';
-  if (t === '연세') return p.연세 ? '연세 ' + Number(p.연세).toLocaleString() + '만원' : '가격문의';
-  if (t === '월세') {
+  if (t === '연세') {
+    var b3 = p.보증금 ? Number(p.보증금).toLocaleString() : '0';
+    var y3 = p.연세 ? Number(p.연세).toLocaleString() : '0';
+    if (b3 === '0' && y3 === '0') return '가격문의';
+    return '보증금 ' + b3 + ' / 연세 ' + y3 + '만원';
+  }  if (t === '월세') {
     var b = p.보증금 ? Number(p.보증금).toLocaleString() : '0';
     var m = p.월세 ? Number(p.월세).toLocaleString() : '0';
     return b + ' / ' + m + '만원';
@@ -815,8 +822,11 @@ function formatPriceShort(p) {
     var v2 = Number(p.보증금);
     return v2 >= 10000 ? '전' + (v2/10000).toFixed(1) + '억' : '전' + v2.toLocaleString();
   }
-  if (t === '연세' && p.연세) return '연' + Number(p.연세).toLocaleString();
-  if ((t === '월세' || t === '단기') && p.월세) {
+  if (t === '연세' && (p.연세 || p.보증금)) {
+    var b4 = p.보증금 ? Number(p.보증금)/1000 : 0;
+    var y4 = p.연세 ? Number(p.연세) : 0;
+    return b4 + '/' + y4 + '만';
+  }  if ((t === '월세' || t === '단기') && p.월세) {
     return (p.보증금 ? Number(p.보증금)/1000 + '/' : '') + Number(p.월세).toLocaleString();
   }
   return '문의';
@@ -1364,8 +1374,10 @@ function formatDealPriceForType(dealType) {
     return v2 ? '전세 ' + Number(v2).toLocaleString() + '만원' : '전세';
   }
   if (dealType === '연세') {
-    var v3 = getVal('f_연세');
-    return v3 ? '연세 ' + Number(v3).toLocaleString() + '만원' : '연세';
+    var b3 = getVal('f_보증금_연세') || '0';
+    var v3 = getVal('f_연세') || '0';
+    if (b3 === '0' && v3 === '0') return '연세';
+    return '보증금' + Number(b3).toLocaleString() + '/연세' + Number(v3).toLocaleString();
   }
   if (dealType === '월세') {
     var b1 = getVal('f_보증금_월세') || '0';
@@ -1936,6 +1948,7 @@ function buildPropertyParams(dealType, isEdit) {
   } else if (dealType === '전세') {
     params['보증금'] = getVal('f_보증금_전세');
   } else if (dealType === '연세') {
+    params['보증금'] = getVal('f_보증금_연세');
     params['연세'] = getVal('f_연세');
   } else if (dealType === '월세') {
     params['보증금'] = getVal('f_보증금_월세');
@@ -2242,6 +2255,7 @@ function fillDealConditions(p) {
   } else if (t === '전세') {
     document.getElementById('f_보증금_전세').value = p.보증금 || '';
   } else if (t === '연세') {
+    document.getElementById('f_보증금_연세').value = p.보증금 || '';
     document.getElementById('f_연세').value = p.연세 || '';
   } else if (t === '월세') {
     document.getElementById('f_보증금_월세').value = p.보증금 || '';
