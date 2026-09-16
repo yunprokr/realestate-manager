@@ -168,7 +168,7 @@ function initMap() {
 
   kakao.maps.event.addListener(map, 'zoom_changed', debounce(function() {
     renderMarkers();
-  }, 150));
+  }, 400));
 
   fitMapToProperties();
 }
@@ -301,20 +301,25 @@ function bindMapTypeToggle() {
 function bindFilters() {
   document.getElementById('filterType').addEventListener('change', function() {
     updateTypeDetailDropdown();
+    currentMarkerMode = null;   // ⭐ 강제 재렌더
     renderList(); renderMarkers();
   });
   document.getElementById('filterTypeDetail').addEventListener('change', function() {
+    currentMarkerMode = null;   // ⭐
     renderList(); renderMarkers();
   });
   document.getElementById('filterTrade').addEventListener('change', function() {
+    currentMarkerMode = null;   // ⭐
     renderList(); renderMarkers();
   });
   ['priceMin', 'priceMax'].forEach(function(id) {
     document.getElementById(id).addEventListener('input', debounce(function() {
+      currentMarkerMode = null;   // ⭐
       renderList(); renderMarkers();
     }, 300));
   });
   document.getElementById('searchInput').addEventListener('input', debounce(function() {
+    currentMarkerMode = null;   // ⭐
     renderList(); renderMarkers();
   }, 250));
 }
@@ -455,6 +460,20 @@ function renderMarkers() {
 
   var level = map.getLevel();
   var useCluster = level >= CLUSTER_LEVEL_THRESHOLD;
+  var newMode = useCluster ? 'cluster' : 'individual';
+
+  // ⭐ 모드가 같으면 재렌더 안 함 (필터 변경 시에만 렌더)
+  // 단, 필터 변경으로 인한 재렌더는 별도 함수로 처리
+  if (currentMarkerMode === newMode && clusterMarkers.length + individualMarkers.length > 0) {
+    // 이미 같은 모드로 렌더된 상태
+    // 필터가 변경됐는지 확인 필요 → 여기선 데이터 개수로 판단
+    var expectedCount = getFilteredProperties().length;
+    var currentCount = clusterMarkers.length + individualMarkers.length;
+    if (expectedCount === currentCount) {
+      // 변화 없음 → 스킵
+      return;
+    }
+  }
 
   if (clusterer) clusterer.clear();
   clusterMarkers = [];
@@ -520,8 +539,10 @@ function renderMarkers() {
     });
   }
 
-  currentMarkerMode = useCluster ? 'cluster' : 'individual';
+  currentMarkerMode = newMode;
 }
+
+
 
 function offsetDuplicateCoords(properties) {
   var coordMap = {};
@@ -600,8 +621,7 @@ function focusProperty(id) {
     setTimeout(function() {
       if (!map) return;
       var pos = new kakao.maps.LatLng(lat, lng);
-      map.setLevel(5, { anchor: pos });
-      map.panTo(pos);
+      map.panTo(pos);   // 현재 레벨 유지하고 이동만
     }, 230);
   }
 
@@ -816,18 +836,32 @@ function formatPriceShort(p) {
   var t = p.거래유형 || '';
   if (t === '매매' && p.매매가) {
     var v = Number(p.매매가);
-    return v >= 10000 ? (v/10000).toFixed(1) + '억' : v.toLocaleString();
+    if (v >= 10000) {
+      var 억 = (v / 10000).toFixed(2).replace(/\.?0+$/, '');
+      return 억 + '억';
+    }
+    return v.toLocaleString();
   }
   if (t === '전세' && p.보증금) {
     var v2 = Number(p.보증금);
-    return v2 >= 10000 ? '전' + (v2/10000).toFixed(1) + '억' : '전' + v2.toLocaleString();
+    if (v2 >= 10000) {
+      var 억2 = (v2 / 10000).toFixed(2).replace(/\.?0+$/, '');
+      return '전' + 억2 + '억';
+    }
+    return '전' + v2.toLocaleString();
   }
   if (t === '연세' && (p.연세 || p.보증금)) {
-    var b4 = p.보증금 ? Number(p.보증금)/1000 : 0;
+    var b4 = p.보증금 ? Number(p.보증금) : 0;
     var y4 = p.연세 ? Number(p.연세) : 0;
-    return b4 + '/' + y4 + '만';
-  }  if ((t === '월세' || t === '단기') && p.월세) {
-    return (p.보증금 ? Number(p.보증금)/1000 + '/' : '') + Number(p.월세).toLocaleString();
+    if (b4 >= 10000) {
+      return (b4/10000).toFixed(1) + '억/' + y4.toLocaleString();
+    }
+    return b4.toLocaleString() + '/' + y4.toLocaleString();
+  }
+  if ((t === '월세' || t === '단기') && p.월세) {
+    var b5 = p.보증금 ? Number(p.보증금) : 0;
+    var b5str = b5 >= 10000 ? (b5/10000).toFixed(1) + '억' : b5.toLocaleString();
+    return b5str + '/' + Number(p.월세).toLocaleString();
   }
   return '문의';
 }
