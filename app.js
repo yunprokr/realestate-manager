@@ -1264,12 +1264,14 @@ function renderTypeSpecificFields(type) {
       { id: 'f_용도지역', label: '용도지역', type: 'text', list: '용도지역List', placeholder: '선택 또는 직접 입력' },
       { id: 'f_지구구역', label: '지구.구역', type: 'text' }
     ];
-    } else if (type === '상가') {
+   } else if (type === '상가') {
     fields = [
       { id: 'f_연면적', label: '연면적 (㎡)', type: 'number' },
       { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
       { id: 'f_건물명', label: '건물명', type: 'text', placeholder: '예: 드림타워' },
-      { id: 'f_해당층총층', label: '해당층/총층', type: 'text' },
+      { id: 'f_해당동', label: '해당동', type: 'text', placeholder: '숫자만 (예: 102)' },
+      { id: 'f_호수', label: '호수', type: 'text', placeholder: '숫자만 (예: 401)' },
+      { id: 'f_해당층총층', label: '해당층/총층', type: 'text', placeholder: '예: 4층/총4층' },
       { id: 'f_현업종', label: '현업종', type: 'text' },
       { id: 'f_추천업종', label: '추천업종', type: 'text' },
       { id: 'f_임대현황', label: '임대현황', type: 'text' }
@@ -1440,12 +1442,27 @@ function generatePropertyNameForDeal(dealType) {
       }
     }
   }
-    else if (매물유형 === '상가') {
+  else if (매물유형 === '상가') {
     if (매물유형상세) parts.push(매물유형상세);
     if (지번) parts.push(지번);
 
+    // 건물명
     var 건물명2 = getVal('f_건물명').trim();
     if (건물명2) parts.push(건물명2);
+
+    // 해당동: "동" 자동 붙이기
+    var 해당동2 = getVal('f_해당동').trim();
+    if (해당동2) {
+      if (!해당동2.endsWith('동')) 해당동2 += '동';
+      parts.push(해당동2);
+    }
+
+    // 호수: "호" 자동 붙이기
+    var 호수2 = getVal('f_호수').trim();
+    if (호수2) {
+      if (!호수2.endsWith('호')) 호수2 += '호';
+      parts.push(호수2);
+    }
 
     var dealStr2 = formatDealPriceForType(dealType);
     if (dealStr2) parts.push(dealStr2);
