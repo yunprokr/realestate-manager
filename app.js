@@ -2944,51 +2944,71 @@ function saveCustomerAdd() {
 
 
 // ============================================================
-// 🔄 매물 필터 초기화
+// 🔄 초기 화면으로 리셋 (매물/고객 어디서든)
 // ============================================================
 var resetPropertyBtn = document.getElementById('resetPropertyFilter');
 if (resetPropertyBtn) {
   resetPropertyBtn.addEventListener('click', function() {
-    // 필터 초기화
+    // 1. 확인 (선택)
+    if (!confirm('초기 화면으로 되돌리시겠습니까?\n(입력 중인 내용은 사라집니다)')) {
+      return;
+    }
+
+    // 2. 매물 탭 활성화
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    var propTab = document.querySelector('.tab[data-tab="property"]');
+    if (propTab) propTab.classList.add('active');
+    currentTab = 'property';
+
+    document.getElementById('propertyPane').classList.remove('hidden');
+    document.getElementById('customerPane').classList.add('hidden');
+
+    // 3. 매물 필터 초기화
     document.getElementById('filterType').value = '';
     document.getElementById('filterTypeDetail').innerHTML = '<option value="">전체 상세</option>';
     document.getElementById('filterTrade').value = '';
     document.getElementById('priceMin').value = '';
     document.getElementById('priceMax').value = '';
-
     document.getElementById('searchInput').value = '';
 
-    // 마커 강제 재렌더
+    // 4. 고객 필터 초기화
+    var cType = document.getElementById('customerFilterType');
+    var cDeal = document.getElementById('customerFilterDeal');
+    var cSearch = document.getElementById('customerSearchInput');
+    if (cType) cType.value = '';
+    if (cDeal) cDeal.value = '';
+    if (cSearch) cSearch.value = '';
+
+    // 5. 상세 패널/모달 닫기
+    document.getElementById('detailPanel').classList.add('hidden');
+    document.getElementById('bottomSheet').classList.add('hidden');
+    document.getElementById('customerDetailModal').classList.add('hidden');
+    document.getElementById('customerEditModal').classList.add('hidden');
+    document.getElementById('addPropertyModal').classList.add('hidden');
+
+    // 6. 선택 상태 초기화
+    selectedId = null;
+    selectedCustomerId = null;
+
+    // 7. 마커 강제 재렌더
     currentMarkerMode = null;
 
-    // ⭐ 지도 축척 재조정 (최초 접속 상태로)
+    // 8. 지도 축척 초기화 (최초 접속 상태)
     if (typeof fitMapToProperties === 'function') {
       fitMapToProperties();
     }
 
-    // 리스트 + 마커 갱신
+    // 9. 패널 크기 재계산
+    setTimeout(function() {
+      if (map) map.relayout();
+    }, 100);
+
+    // 10. 리스트 + 마커 갱신
     renderList();
     renderMarkers();
+    if (typeof renderCustomerList === 'function') {
+      renderCustomerList();
+    }
   });
 }
 
-
-// ============================================================
-// 🔄 고객 필터 초기화
-// ============================================================
-var resetCustomerBtn = document.getElementById('resetCustomerFilter');
-if (resetCustomerBtn) {
-  resetCustomerBtn.addEventListener('click', function() {
-    // 필터 초기화
-    var typeEl = document.getElementById('customerFilterType');
-    var dealEl = document.getElementById('customerFilterDeal');
-    var searchEl = document.getElementById('customerSearchInput');
-
-    if (typeEl) typeEl.value = '';
-    if (dealEl) dealEl.value = '';
-    if (searchEl) searchEl.value = '';
-
-    // 리스트 갱신
-    renderCustomerList();
-  });
-}
