@@ -1755,21 +1755,24 @@ if (btnSaveAdd) {
     var 신규고객명 = '';
 
     if (!고객ID) {
-      if (isEdit) {
-        alert('소유주를 선택하세요');
-        return;
-      }
       var newForm = document.getElementById('newCustomerForm');
-      if (!newForm.classList.contains('hidden')) {
+      var isNewFormOpen = newForm && !newForm.classList.contains('hidden');
+
+      if (isNewFormOpen) {
+        // 신규 고객 폼이 열려있으면 등록 모드/수정 모드 상관없이 허용
         신규고객명 = getVal('f_신규고객명').trim();
         if (!신규고객명) { alert('신규 고객명을 입력하세요'); return; }
         신규고객 = true;
+      } else if (isEdit) {
+        alert('소유주를 선택하거나 신규 등록하세요');
+        return;
       } else {
         alert('소유주를 선택하거나 신규 등록하세요');
         return;
       }
     }
 
+    
     // ===== 거래 조건 =====
     var dealTypes = [];
     ['매매', '전세', '연세', '월세', '단기'].forEach(function(t) {
@@ -1977,9 +1980,9 @@ function buildPropertyParams(dealType, isEdit) {
   var 고객ID = getVal('f_고객ID');
   params['고객ID'] = 고객ID;
 
-  if (!isEdit && !고객ID) {
+  if (!고객ID) {
     var newForm = document.getElementById('newCustomerForm');
-    if (!newForm.classList.contains('hidden')) {
+    if (newForm && !newForm.classList.contains('hidden')) {
       params['신규고객'] = 'true';
       params['신규고객명'] = getVal('f_신규고객명');
       params['신규고객연락처'] = getVal('f_신규고객연락처');
