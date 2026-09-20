@@ -1128,4 +1128,19 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
 }
 
 
-  
+.btn-reset {
+  margin-left: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+  background: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-reset:hover {
+  background: #4A90E2;
+  color: #fff;
+  border-color: #4A90E2;
+}  
