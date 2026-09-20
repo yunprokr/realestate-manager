@@ -2973,3 +2973,22 @@ if (resetPropertyBtn) {
 }
 
 
+// ============================================================
+// 🔄 고객 필터 초기화
+// ============================================================
+var resetCustomerBtn = document.getElementById('resetCustomerFilter');
+if (resetCustomerBtn) {
+  resetCustomerBtn.addEventListener('click', function() {
+    // 필터 초기화
+    var typeEl = document.getElementById('customerFilterType');
+    var dealEl = document.getElementById('customerFilterDeal');
+    var searchEl = document.getElementById('customerSearchInput');
+
+    if (typeEl) typeEl.value = '';
+    if (dealEl) dealEl.value = '';
+    if (searchEl) searchEl.value = '';
+
+    // 리스트 갱신
+    renderCustomerList();
+  });
+}
