@@ -1148,3 +1148,29 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
 }
 
 
+/* 고객 등록 바에 초기화 버튼 */
+.customer-add-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.customer-add-bar .btn-primary {
+  flex: 1;
+}
+.btn-reset-small {
+  padding: 8px 12px;
+  font-size: 14px;
+  background: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.btn-reset-small:hover {
+  background: #4A90E2;
+  color: #fff;
+  border-color: #4A90E2;
+}
+
