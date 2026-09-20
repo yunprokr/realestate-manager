@@ -1128,8 +1128,9 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
 }
 
 
+/* ===== 매물 필터 초기화 버튼 ===== */
 .btn-reset {
-  margin-left: 8px;
+  margin-left: 6px;
   padding: 3px 8px;
   font-size: 11px;
   background: #f0f0f0;
@@ -1138,9 +1139,12 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
   border-radius: 4px;
   cursor: pointer;
   transition: all .15s;
+  vertical-align: middle;
 }
 .btn-reset:hover {
   background: #4A90E2;
   color: #fff;
   border-color: #4A90E2;
-}  
+}
+
+
