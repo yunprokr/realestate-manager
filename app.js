@@ -2942,6 +2942,7 @@ function saveCustomerAdd() {
   if (saveBtn) saveBtn.addEventListener('click', saveCustomerAdd);
 })();
 
+
 // ============================================================
 // 🔄 매물 필터 초기화
 // ============================================================
@@ -2954,14 +2955,21 @@ if (resetPropertyBtn) {
     document.getElementById('filterTrade').value = '';
     document.getElementById('priceMin').value = '';
     document.getElementById('priceMax').value = '';
+
     document.getElementById('searchInput').value = '';
 
     // 마커 강제 재렌더
     currentMarkerMode = null;
+
+    // ⭐ 지도 축척 재조정 (최초 접속 상태로)
+    if (typeof fitMapToProperties === 'function') {
+      fitMapToProperties();
+    }
 
     // 리스트 + 마커 갱신
     renderList();
     renderMarkers();
   });
 }
+
 
