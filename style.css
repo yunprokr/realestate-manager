@@ -1174,3 +1174,11 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
   border-color: #4A90E2;
 }
 
+/* 평단가 자동계산 안내 */
+.form-field label .hint {
+  font-size: 10px;
+  color: #999;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
