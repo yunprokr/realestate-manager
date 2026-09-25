@@ -1367,6 +1367,8 @@ function renderTypeSpecificFields(type) {
 
   bindNameGenerationTriggers();
   bindDateInput();
+  bindPyeongPriceTriggers();
+  updatePyeongPrice(); 
 }
 
 // ============================================================
@@ -1377,6 +1379,61 @@ function sqmToPyeong(sqm) {
   if (isNaN(n) || n <= 0) return '';
   return (n * 0.3025).toFixed(1);
 }
+
+// ============================================================
+// 평단가 자동 계산 (매매가 ÷ 면적(평))
+// ============================================================
+function calculatePyeongPrice() {
+  var 매물유형 = getVal('f_매물유형');
+  var 매매가 = parseFloat(getVal('f_매매가')) || 0;
+
+  if (!매매가 || !매물유형) return '';
+
+  // 매물유형별 면적 기준
+  var 면적 = 0;
+
+  if (매물유형 === '토지') {
+    면적 = parseFloat(getVal('f_대지')) || 0;
+  } else if (매물유형 === '공장창고') {
+    면적 = parseFloat(getVal('f_대지')) || 0;
+    if (!면적) 면적 = parseFloat(getVal('f_연면적')) || 0;
+  } else if (매물유형 === '상가') {
+    면적 = parseFloat(getVal('f_전용')) || 0;
+    if (!면적) 면적 = parseFloat(getVal('f_연면적')) || 0;
+  } else if (매물유형 === '주택') {
+    면적 = parseFloat(getVal('f_대지')) || 0;
+    if (!면적) 면적 = parseFloat(getVal('f_전용')) || 0;
+    if (!면적) 면적 = parseFloat(getVal('f_공급')) || 0;
+  }
+
+  if (!면적 || 면적 <= 0) return '';
+
+  // ㎡ → 평 (1평 = 3.3058㎡)
+  var 평수 = 면적 / 3.3058;
+  if (평수 <= 0) return '';
+
+  return Math.round(매매가 / 평수);
+}
+
+function updatePyeongPrice() {
+  var el = document.getElementById('f_평단가');
+  if (!el) return;
+  var v = calculatePyeongPrice();
+  el.value = (v !== '') ? v : '';
+}
+
+function bindPyeongPriceTriggers() {
+  var ids = ['f_매매가', 'f_대지', 'f_전용', 'f_연면적', 'f_공급'];
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (el.dataset.pyeongBound === '1') return;
+    el.dataset.pyeongBound = '1';
+    el.addEventListener('change', updatePyeongPrice);
+    el.addEventListener('input', debounce(updatePyeongPrice, 400));
+  });
+}
+
 
 function shortLocation(소재지) {
   if (!소재지) return '';
@@ -2012,9 +2069,10 @@ function buildPropertyParams(dealType, isEdit) {
     params['월세'] = getVal('f_월세_단기');
   }
 
-    params['관리비'] = getVal('f_관리비');
+   params['관리비'] = getVal('f_관리비');
    params['관리비포함항목'] = getVal('f_관리비포함항목');
    params['권리금'] = getVal('f_권리금');
+   params['평단가'] = calculatePyeongPrice();
 
   ['f_대지', 'f_용도지역', 'f_지구구역', 'f_연면적', 'f_전용', 'f_공급', 'f_해당층총층',
    'f_현업종', 'f_추천업종', 'f_임대현황', 'f_사용전력', 'f_층고',
@@ -2038,6 +2096,7 @@ function buildPropertyParams(dealType, isEdit) {
 
   return params;
 }
+
 
 // ============================================================
 // 연락처 자동 포맷
@@ -2237,6 +2296,12 @@ function fillEditForm(p) {
       관리비포함Wrapper.style.display = 'none';
     }
   }
+
+  // ⭐ 평단가 재계산 (수정 모드에서도)
+  setTimeout(function() {
+    bindPyeongPriceTriggers();
+    updatePyeongPrice();
+  }, 100);
 }
 
 
