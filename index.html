@@ -32,7 +32,23 @@
   <option value="관리지역">
   <option value="도시지역">
 </datalist>
-    
+
+<!-- 입주가능일 선택 옵션 -->
+<datalist id="입주가능일List">
+  <option value="즉시(공실)">
+  <option value="협의">
+</datalist>
+
+<!-- 관계 선택 옵션 -->
+<datalist id="관계List">
+  <option value="소유주">
+  <option value="임차인">
+  <option value="배우자">
+  <option value="가족">
+  <option value="대리인">
+  <option value="지인">
+  <option value="기타">
+</datalist>
     
 <div id="authScreen" class="auth-screen">
   <div class="auth-box">
@@ -488,7 +504,7 @@
           </div>
           <div class="form-field">
             <label>관계</label>
-            <input type="text" id="ce_관계">
+            <input type="text" id="ce_관계" list="관계List" placeholder="선택 또는 직접 입력">
           </div>
         </div>
       </section>
