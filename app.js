@@ -769,6 +769,8 @@ function buildTypeSpecificHTML(p) {
     if (p.현업종) h += detailRow('현업종', p.현업종);
     if (p.추천업종) h += detailRow('추천업종', p.추천업종);
     if (p.임대현황) h += detailRow('임대현황', p.임대현황);
+    if (p.입주가능일) h += detailRow('입주가능일', p.입주가능일);
+    if (p.사용승인일) h += detailRow('사용승인일', p.사용승인일);
     h += '</div>';
   }
 
@@ -777,6 +779,8 @@ function buildTypeSpecificHTML(p) {
     if (p.사용전력) h += detailRow('사용전력', p.사용전력 + ' kW');
     if (p.층고) h += detailRow('층고', p.층고 + ' m');
     if (p.용도지역) h += detailRow('용도지역', p.용도지역);
+    if (p.입주가능일) h += detailRow('입주가능일', p.입주가능일);
+    if (p.사용승인일) h += detailRow('사용승인일', p.사용승인일);
     h += '</div>';
   }
 
@@ -797,6 +801,7 @@ function buildTypeSpecificHTML(p) {
     if (p.주차) h += detailRow('주차', p.주차);
     if (p.세대수) h += detailRow('세대수', p.세대수);
     if (p.사용승인일) h += detailRow('사용승인일', p.사용승인일);
+    if (p.입주가능일) h += detailRow('입주가능일', p.입주가능일);
     h += '</div>';
   }
 
@@ -1308,7 +1313,9 @@ function renderTypeSpecificFields(type) {
       { id: 'f_해당층총층', label: '해당층/총층', type: 'text', placeholder: '예: 4층/총4층' },
       { id: 'f_현업종', label: '현업종', type: 'text' },
       { id: 'f_추천업종', label: '추천업종', type: 'text' },
-      { id: 'f_임대현황', label: '임대현황', type: 'text' }
+      { id: 'f_임대현황', label: '임대현황', type: 'text' },
+      { id: 'f_사용승인일', label: '사용승인일', type: 'text', placeholder: '예: 2016-01-04' },
+      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '즉시(공실) / 협의 / 2025.01.15' }
     ];
   } else if (type === '공장창고') {
     fields = [
@@ -1316,7 +1323,9 @@ function renderTypeSpecificFields(type) {
       { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
       { id: 'f_사용전력', label: '사용전력 (kW)', type: 'number' },
       { id: 'f_층고', label: '층고 (m)', type: 'number' },
-      { id: 'f_용도지역', label: '용도지역', type: 'text', list: '용도지역List', placeholder: '선택 또는 직접 입력' }
+      { id: 'f_용도지역', label: '용도지역', type: 'text', list: '용도지역List', placeholder: '선택 또는 직접 입력' },
+      { id: 'f_사용승인일', label: '사용승인일', type: 'text', placeholder: '예: 2016-01-04' },
+      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '즉시(공실) / 협의 / 2025.01.15' }
     ];
   } else if (type === '주택') {
     fields = [
@@ -1337,7 +1346,8 @@ function renderTypeSpecificFields(type) {
       { id: 'f_특수구조', label: '특수구조 (복층/다락)', type: 'text' },
       { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
       { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
-      { id: 'f_엘리베이터', label: '엘리베이터', type: 'select', options: ['O', 'X'] }
+      { id: 'f_엘리베이터', label: '엘리베이터', type: 'select', options: ['O', 'X'] },
+      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '즉시(공실) / 협의 / 2025.01.15' }
     ];
   }
 
@@ -1677,8 +1687,10 @@ function searchCustomer() {
         var item = document.createElement('div');
         item.className = 'search-result-item';
         item.innerHTML = '<div class="name">' + escapeHtml(c.고객명 || '이름없음')
-          + ' <span style="font-size:11px;color:#4A90E2;">[' + escapeHtml(c.고객유형 || '') + ']</span></div>'
-          + '<div class="meta">' + escapeHtml(c.연락처 || '') + ' · ' + escapeHtml(c.거래유형 || '') + '</div>';
+  + ' <span style="font-size:11px;color:#4A90E2;">[' + escapeHtml(c.고객유형 || '') + ']</span>'
+  + (c.관계 ? ' <span style="font-size:11px;color:#E67E22;">(' + escapeHtml(c.관계) + ')</span>' : '')
+  + '</div>'
+  + '<div class="meta">' + escapeHtml(c.연락처 || '') + ' · ' + escapeHtml(c.거래유형 || '') + '</div>';
         item.addEventListener('click', function() {
           selectCustomer(c);
         });
@@ -1693,7 +1705,8 @@ function searchCustomer() {
 function selectCustomer(c) {
   document.getElementById('f_고객ID').value = c.고객ID || '';
   document.getElementById('selectedCustomerInfo').textContent =
-    (c.고객명 || '') + ' (' + (c.연락처 || '연락처 없음') + ')';
+    (c.고객명 || '') + ' (' + (c.연락처 || '연락처 없음') + ')'
+    + (c.관계 ? ' · ' + c.관계 : '');
   document.getElementById('selectedCustomer').classList.remove('hidden');
   document.getElementById('customerSearchResults').classList.add('hidden');
   document.getElementById('newCustomerForm').classList.add('hidden');
@@ -2078,7 +2091,7 @@ function buildPropertyParams(dealType, isEdit) {
    'f_현업종', 'f_추천업종', 'f_임대현황', 'f_사용전력', 'f_층고',
    'f_방', 'f_욕실', 'f_건축물용도', 'f_건물명', 'f_해당동', 'f_호수',
    'f_방향', 'f_주차', 'f_세대수', 'f_사용승인일', 'f_특수구조', 'f_특수구조상세',
-   'f_반려동물', 'f_엘리베이터'].forEach(function(id) {
+   'f_반려동물', 'f_엘리베이터', 'f_입주가능일'].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) {
       var key = id.replace('f_', '');
@@ -2332,7 +2345,8 @@ function fillTypeSpecificFields(p) {
     'f_특수구조': p.특수구조,
     'f_특수구조상세': p.특수구조상세,
     'f_반려동물': p.반려동물,
-    'f_엘리베이터': p.엘리베이터
+    'f_엘리베이터': p.엘리베이터,
+    'f_입주가능일': p.입주가능일
   };
 
   Object.keys(fieldMap).forEach(function(id) {
@@ -2950,6 +2964,7 @@ function saveCustomerAdd() {
     고객유형: document.getElementById('ca_고객유형').value,
     연락처: document.getElementById('ca_연락처').value.trim(),
     통신사: document.getElementById('ca_통신사').value.trim(),
+    관계: document.getElementById('ca_관계').value.trim(),
     소유주명: document.getElementById('ca_소유주명').value.trim(),
     소유주연락처: document.getElementById('ca_소유주연락처').value.trim(),
     거래유형: document.getElementById('ca_거래유형').value,
