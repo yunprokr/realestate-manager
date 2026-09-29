@@ -3092,3 +3092,31 @@ if (resetPropertyBtn) {
   });
 }
 
+
+// ============================================================
+// 📱 모바일 필터 접기/펴기
+// ============================================================
+function toggleMobileFilter() {
+  var body = document.getElementById('filterBody');
+  var btn = document.getElementById('btnToggleFilter');
+  if (!body || !btn) return;
+
+  body.classList.toggle('expanded');
+  btn.textContent = body.classList.contains('expanded') ? '필터 ▲' : '필터 ▼';
+}
+
+// 검색어 입력 시 자동으로 필터 접기 (모바일에서만)
+(function() {
+  var el = document.getElementById('searchInput');
+  if (!el) return;
+  el.addEventListener('focus', function() {
+    if (window.innerWidth > 768) return;
+    var body = document.getElementById('filterBody');
+    if (body && body.classList.contains('expanded')) {
+      body.classList.remove('expanded');
+      var btn = document.getElementById('btnToggleFilter');
+      if (btn) btn.textContent = '필터 ▼';
+    }
+  });
+})();
+
