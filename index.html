@@ -83,36 +83,44 @@
     <div id="layout">
       <aside id="sidebar">
         <div class="filter-panel">
-          <div class="filter-row">
-            <select id="filterType">
-              <option value="">전체 유형</option>
-              <option>토지</option>
-              <option>상가</option>
-              <option>공장창고</option>
-              <option>주택</option>
-            </select>
-            <select id="filterTypeDetail">
-              <option value="">전체 상세</option>
-            </select>
-          </div>
-          <div class="filter-row">
-            <select id="filterTrade">
-              <option value="">전체 거래</option>
-              <option>매매</option><option>전세</option><option>연세</option>
-              <option>월세</option><option>단기</option>
-            </select>
+          <!-- ⭐ 검색창 + 필터 토글 버튼 (모바일 전용) -->
+          <div class="filter-search-row">
+            <input type="text" id="searchInput" placeholder="매물명, 주소, 고객 검색">
+            <button type="button" id="btnToggleFilter" class="btn-toggle-filter" onclick="toggleMobileFilter()">필터 ▼</button>
           </div>
 
-          <div class="filter-price">
-            <label>가격범위 (만원)</label>
-            <div class="price-inputs">
-              <input type="number" id="priceMin" placeholder="최소" value="">
-              <span>~</span>
-              <input type="number" id="priceMax" placeholder="최대" value="">
+          <!-- ⭐ 나머지 필터는 이 안에 (모바일에서 접힘) -->
+          <div id="filterBody">
+            <div class="filter-row">
+              <select id="filterType">
+                <option value="">전체 유형</option>
+                <option>토지</option>
+                <option>상가</option>
+                <option>공장창고</option>
+                <option>주택</option>
+              </select>
+              <select id="filterTypeDetail">
+                <option value="">전체 상세</option>
+              </select>
+            </div>
+            <div class="filter-row">
+              <select id="filterTrade">
+                <option value="">전체 거래</option>
+                <option>매매</option><option>전세</option><option>연세</option>
+                <option>월세</option><option>단기</option>
+              </select>
+            </div>
+
+            <div class="filter-price">
+              <label>가격범위 (만원)</label>
+              <div class="price-inputs">
+                <input type="number" id="priceMin" placeholder="최소" value="">
+                <span>~</span>
+                <input type="number" id="priceMax" placeholder="최대" value="">
+              </div>
             </div>
           </div>
 
-          <input type="text" id="searchInput" placeholder="매물명, 주소, 고객 검색">
           <div id="countBar">표시 <span id="filteredCount">0</span> / 전체 <span id="totalCount">0</span></div>
         </div>
 
