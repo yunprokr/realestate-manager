@@ -1182,3 +1182,56 @@ body { background: #f5f6f8; overflow: hidden; color: #222; }
   margin-left: 4px;
 }
 
+
+/* ===== 모바일 필터 토글 ===== */
+.filter-search-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.filter-search-row input {
+  flex: 1;
+}
+.btn-toggle-filter {
+  display: none; /* PC에서는 숨김 */
+  padding: 8px 12px;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  color: #333;
+}
+.btn-toggle-filter:hover {
+  background: #e4e4e4;
+}
+
+@media (max-width: 768px) {
+  /* 토글 버튼 노출 */
+  .btn-toggle-filter {
+    display: block;
+  }
+  /* 필터 바디는 기본 접힘 */
+  #filterBody {
+    display: none;
+  }
+  #filterBody.expanded {
+    display: block;
+  }
+  /* 사이드바 높이 늘림 */
+  #sidebar {
+    height: 58vh;
+  }
+  #mapContainer {
+    height: 42vh;
+  }
+  /* 접힌 상태에서 필터 패널 여백 최소화 */
+  .filter-panel {
+    padding: 10px 12px;
+  }
+}
+
+
+
