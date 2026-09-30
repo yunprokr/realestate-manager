@@ -2052,7 +2052,7 @@ function savePropertyMulti(btn, dealTypes, isNewCustomer, newCustomerName) {
 
 
 // ============================================================
-// 다중 거래유형 수정 (기존 매물 수정 + 신규 매물 추가)
+// 다중 거래유형 수정 (중복 방지 포함)
 // ============================================================
 function savePropertyMultiEdit(btn, updateType, addTypes) {
   btn.disabled = true;
@@ -2080,8 +2080,65 @@ function savePropertyMultiEdit(btn, updateType, addTypes) {
         btn.textContent = '수정 저장';
         return;
       }
+
       var 고객ID = data.고객ID || getVal('f_고객ID');
-      addExtraPropertiesSequentially(btn, addTypes, 고객ID, currentEditPropertyId, 0, []);
+
+      // ⭐ 중복 체크
+      var filtered = filterDuplicateTypes(addTypes, 고객ID);
+
+      // 모두 중복이면 신규 추가 없이 종료
+      if (filtered.toAdd.length === 0) {
+        var msgAllDup = '수정 완료!\n\n기존 매물(' + currentEditPropertyId + ') 수정됨\n\n';
+        msgAllDup += '※ 다음 거래유형은 이미 같은 조건의 매물이 있어 건너뛰었습니다:\n';
+        filtered.skipped.forEach(function(s) {
+          msgAllDup += '· ' + s.dealType + ' → 기존 매물 ' + s.existingId + '\n';
+        });
+        alert(msgAllDup);
+
+        btn.disabled = false;
+        btn.textContent = '수정 저장';
+        closeAddModal();
+        fetchAllData().then(function() {
+          renderList();
+          renderMarkers();
+          if (currentTab === 'customer') renderCustomerList();
+          var updated = allProperties.find(function(x) { return x.매물ID === currentEditPropertyId; });
+          if (updated) {
+            selectedId = currentEditPropertyId;
+            var isMobile = window.innerWidth <= 1023;
+            if (isMobile) showBottomSheet(updated);
+            else showDetailPanel(updated);
+          }
+        });
+        return;
+      }
+
+      // 일부만 중복이면 사용자에게 확인
+      if (filtered.skipped.length > 0) {
+        var msg = '⚠ 중복 매물이 감지되었습니다.\n\n';
+        msg += '【건너뛸 항목】\n';
+        filtered.skipped.forEach(function(s) {
+          msg += '· ' + s.dealType + ' → 기존 매물 ' + s.existingId + '\n';
+        });
+        msg += '\n【추가할 항목】\n';
+        filtered.toAdd.forEach(function(t) {
+          msg += '· ' + t + '\n';
+        });
+        msg += '\n계속 진행하시겠습니까?';
+
+        if (!confirm(msg)) {
+          btn.disabled = false;
+          btn.textContent = '수정 저장';
+          fetchAllData().then(function() {
+            renderList();
+            renderMarkers();
+          });
+          return;
+        }
+      }
+
+      // 중복 아닌 것만 순차 추가
+      addExtraPropertiesSequentially(btn, filtered.toAdd, 고객ID, currentEditPropertyId, 0, []);
     })
     .catch(function(err) {
       btn.disabled = false;
@@ -2089,6 +2146,39 @@ function savePropertyMultiEdit(btn, updateType, addTypes) {
       alert('오류: ' + err.message);
     });
 }
+
+// ============================================================
+// 중복 거래유형 필터링
+// ============================================================
+function filterDuplicateTypes(addTypes, 고객ID) {
+  var 소재지 = getVal('f_소재지');
+  var 본번 = String(getVal('f_본번')).trim();
+  var 부번 = String(getVal('f_부번')).trim();
+
+  var toAdd = [];
+  var skipped = [];
+
+  addTypes.forEach(function(dealType) {
+    var dup = allProperties.find(function(x) {
+      return String(x.고객ID) === String(고객ID)
+          && x.매물ID !== currentEditPropertyId
+          && x.소재지 === 소재지
+          && String(x.본번) === 본번
+          && String(x.부번) === 부번
+          && x.거래유형 === dealType;
+    });
+
+    if (dup) {
+      skipped.push({ dealType: dealType, existingId: dup.매물ID });
+    } else {
+      toAdd.push(dealType);
+    }
+  });
+
+  return { toAdd: toAdd, skipped: skipped };
+}
+
+
 
 function addExtraPropertiesSequentially(btn, addTypes, 고객ID, updatedId, index, results) {
   if (index >= addTypes.length) {
