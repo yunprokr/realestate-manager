@@ -312,6 +312,15 @@ function bindFilters() {
     currentMarkerMode = null;   // ⭐
     renderList(); renderMarkers();
   });
+
+    var statusEl = document.getElementById('filterStatus');
+  if (statusEl) {
+    statusEl.addEventListener('change', function() {
+      currentMarkerMode = null;
+      renderList(); renderMarkers();
+    });
+  }
+  
   ['priceMin', 'priceMax'].forEach(function(id) {
     document.getElementById(id).addEventListener('input', debounce(function() {
       currentMarkerMode = null;   // ⭐
@@ -349,6 +358,8 @@ function getFilteredProperties() {
   var type = document.getElementById('filterType').value;
   var typeDetail = document.getElementById('filterTypeDetail').value;
   var trade = document.getElementById('filterTrade').value;
+  var statusEl = document.getElementById('filterStatus');
+  var status = statusEl ? statusEl.value : '';
   var minP = parseFloat(document.getElementById('priceMin').value) || 0;
   var maxP = parseFloat(document.getElementById('priceMax').value) || Infinity;
   var keyword = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -357,6 +368,17 @@ function getFilteredProperties() {
     if (type && p.매물유형 !== type) return false;
     if (typeDetail && p.매물유형상세 !== typeDetail) return false;
     if (trade && p.거래유형 !== trade) return false;
+
+    // ⭐ 매물상태 필터
+    if (status === '__all__') {
+      // 전체 표시 (필터 없음)
+    } else if (status) {
+      // 특정 상태만
+      if (p.매물상태 !== status) return false;
+    } else {
+      // 기본: 진행중 상태만 (완료/종료 제외)
+      if (p.매물상태 === '완료' || p.매물상태 === '종료') return false;
+    }
 
     if (minP > 0 || maxP < Infinity) {
       var price = getRepresentativePrice(p);
@@ -372,6 +394,7 @@ function getFilteredProperties() {
     return true;
   });
 }
+
 
 function getRepresentativePrice(p) {
   var t = p.거래유형 || '';
@@ -3270,10 +3293,12 @@ if (resetPropertyBtn) {
     document.getElementById('propertyPane').classList.remove('hidden');
     document.getElementById('customerPane').classList.add('hidden');
 
-    // 3. 매물 필터 초기화
+    // 3. 매물 필터 초기화 (기존 코드 유지하면서 한 줄 추가)
     document.getElementById('filterType').value = '';
     document.getElementById('filterTypeDetail').innerHTML = '<option value="">전체 상세</option>';
     document.getElementById('filterTrade').value = '';
+    var statusResetEl = document.getElementById('filterStatus');
+    if (statusResetEl) statusResetEl.value = '';
     document.getElementById('priceMin').value = '';
     document.getElementById('priceMax').value = '';
     document.getElementById('searchInput').value = '';
