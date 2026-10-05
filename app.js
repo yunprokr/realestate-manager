@@ -735,12 +735,31 @@ function buildDetailHTML(p) {
     h += '</div>';
   }
 
+    // ⭐ 소유주 정보 (연락처 클릭 시 전화걸기)
+  var ownerCust = allCustomers.find(function(x) {
+    return String(x.고객ID) === String(p.고객ID);
+  });
+
   h += '<div class="detail-section">';
-  h += '  <h4>등록 정보</h4>';
-  if (p.등록일) h += detailRow('등록일', p.등록일);
-  if (p.확인일) h += detailRow('확인일', p.확인일);
-  if (p.고객ID) h += detailRow('고객ID', p.고객ID);
+  h += '  <h4>소유주 정보</h4>';
+  if (ownerCust) {
+    if (ownerCust.고객명) h += detailRow('성명', ownerCust.고객명);
+    if (ownerCust.연락처) h += phoneRow('연락처', ownerCust.연락처);
+    if (ownerCust.소유주명 && ownerCust.소유주명 !== ownerCust.고객명) {
+      h += detailRow('소유주', ownerCust.소유주명);
+    }
+    if (ownerCust.소유주연락처 && ownerCust.소유주연락처 !== ownerCust.연락처) {
+      h += phoneRow('소유주연락처', ownerCust.소유주연락처);
+    }
+    if (!ownerCust.고객명 && !ownerCust.연락처 && !ownerCust.소유주명 && !ownerCust.소유주연락처) {
+      h += '  <div style="color:#999; font-size:12px;">소유주 정보가 없습니다</div>';
+    }
+  } else {
+    h += '  <div style="color:#999; font-size:12px;">고객 정보를 찾을 수 없습니다</div>';
+  }
   h += '</div>';
+  
+  
 
   h += '<div class="detail-actions">';
   if (p.블로그링크) {
@@ -834,6 +853,20 @@ function buildTypeSpecificHTML(p) {
 function detailRow(label, value) {
   return '<div class="detail-row"><span class="label">' + escapeHtml(label) + '</span><span class="value">' + escapeHtml(value) + '</span></div>';
 }
+
+
+// 전화번호 클릭 시 전화걸기
+function phoneRow(label, phone) {
+  var tel = String(phone).replace(/[^0-9]/g, '');
+  return '<div class="detail-row">'
+    + '<span class="label">' + escapeHtml(label) + '</span>'
+    + '<span class="value">'
+    + '<a href="tel:' + tel + '" style="color:#4A90E2; text-decoration:none; font-weight:500;">'
+    + '📞 ' + escapeHtml(phone)
+    + '</a></span></div>';
+}
+
+
 
 // ============================================================
 // 가격 포맷
