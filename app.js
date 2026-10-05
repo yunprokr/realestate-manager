@@ -2444,19 +2444,30 @@ function formatDateInput(input) {
   }
 }
 
-// 사용승인일 자동 포맷 바인딩
 function bindDateInput() {
   var el = document.getElementById('f_사용승인일');
-  if (!el) return;
-  if (el.dataset.dateBound === '1') return;
-  el.dataset.dateBound = '1';
+  if (el && el.dataset.dateBound !== '1') {
+    el.dataset.dateBound = '1';
+    el.addEventListener('input', function() {
+      var num = this.value.replace(/[^0-9]/g, '');
+      if (num.length >= 6) formatDateInput(this);
+    });
+  }
 
-  el.addEventListener('input', function() {
-    var num = this.value.replace(/[^0-9]/g, '');
-    if (num.length >= 6) {
-      formatDateInput(this);
-    }
-  });
+  // ⭐ 입주가능일도 자동 포맷
+  var el2 = document.getElementById('f_입주가능일');
+  if (el2 && el2.dataset.dateBound !== '1') {
+    el2.dataset.dateBound = '1';
+    el2.addEventListener('input', function() {
+      var val = this.value;
+      // 한글/영문 입력 시 (공실, 주인협의)는 건드리지 않음
+      if (/[ㄱ-ㅎ가-힣a-zA-Z]/.test(val)) return;
+      var num = val.replace(/[^0-9]/g, '');
+      if (num.length === 8) {
+        this.value = num.substr(0, 4) + '-' + num.substr(4, 2) + '-' + num.substr(6, 2);
+      }
+    });
+  }
 }
 
 
