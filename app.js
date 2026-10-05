@@ -1369,7 +1369,7 @@ function renderTypeSpecificFields(type) {
       { id: 'f_현업종', label: '현업종', type: 'text' },
       { id: 'f_추천업종', label: '추천업종', type: 'text' },
       { id: 'f_사용승인일', label: '사용승인일', type: 'text', placeholder: '예: 2016-01-04' },
-      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '즉시(공실) / 협의 / 2025.01.15' }
+      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '공실 / 주인협의 / 2026-12-31' }
     ];
   } else if (type === '공장창고') {
     fields = [
@@ -1379,7 +1379,7 @@ function renderTypeSpecificFields(type) {
       { id: 'f_층고', label: '층고 (m)', type: 'number' },
       { id: 'f_용도지역', label: '용도지역', type: 'text', list: '용도지역List', placeholder: '선택 또는 직접 입력' },
       { id: 'f_사용승인일', label: '사용승인일', type: 'text', placeholder: '예: 2016-01-04' },
-      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '즉시(공실) / 협의 / 2025.01.15' }
+      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '공실 / 주인협의 / 2026-12-31' }
     ];
   } else if (type === '주택') {
     fields = [
@@ -1401,7 +1401,7 @@ function renderTypeSpecificFields(type) {
       { id: 'f_특수구조상세', label: '특수구조 상세', type: 'text' },
       { id: 'f_반려동물', label: '반려동물 (가능/불가/협의)', type: 'text' },
       { id: 'f_엘리베이터', label: '엘리베이터', type: 'select', options: ['O', 'X'] },
-      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '즉시(공실) / 협의 / 2025.01.15' }
+      { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '공실 / 주인협의 / 2026-12-31' }
     ];
   }
 
