@@ -810,7 +810,6 @@ function buildTypeSpecificHTML(p) {
     if (p.해당층총층) h += detailRow('층', p.해당층총층);
     if (p.현업종) h += detailRow('현업종', p.현업종);
     if (p.추천업종) h += detailRow('추천업종', p.추천업종);
-    if (p.임대현황) h += detailRow('임대현황', p.임대현황);
     if (p.입주가능일) h += detailRow('입주가능일', p.입주가능일);
     if (p.사용승인일) h += detailRow('사용승인일', p.사용승인일);
     h += '</div>';
@@ -1369,7 +1368,6 @@ function renderTypeSpecificFields(type) {
       { id: 'f_해당층총층', label: '해당층/총층', type: 'text', placeholder: '예: 4층/총4층' },
       { id: 'f_현업종', label: '현업종', type: 'text' },
       { id: 'f_추천업종', label: '추천업종', type: 'text' },
-      { id: 'f_임대현황', label: '임대현황', type: 'text' },
       { id: 'f_사용승인일', label: '사용승인일', type: 'text', placeholder: '예: 2016-01-04' },
       { id: 'f_입주가능일', label: '입주가능일', type: 'text', list: '입주가능일List', placeholder: '즉시(공실) / 협의 / 2025.01.15' }
     ];
@@ -2371,7 +2369,7 @@ function buildPropertyParams(dealType, isEdit) {
    params['평단가'] = calculatePyeongPrice();
 
   ['f_대지', 'f_용도지역', 'f_지구구역', 'f_연면적', 'f_전용', 'f_공급', 'f_해당층총층',
-   'f_현업종', 'f_추천업종', 'f_임대현황', 'f_사용전력', 'f_층고',
+   'f_현업종', 'f_추천업종', 'f_사용전력', 'f_층고',
    'f_방', 'f_욕실', 'f_건축물용도', 'f_건물명', 'f_해당동', 'f_호수',
    'f_방향', 'f_주차', 'f_세대수', 'f_사용승인일', 'f_특수구조', 'f_특수구조상세',
    'f_반려동물', 'f_엘리베이터', 'f_입주가능일'].forEach(function(id) {
@@ -2612,7 +2610,6 @@ function fillTypeSpecificFields(p) {
     'f_해당층총층': p.해당층총층,
     'f_현업종': p.현업종,
     'f_추천업종': p.추천업종,
-    'f_임대현황': p.임대현황,
     'f_사용전력': p.사용전력,
     'f_층고': p.층고,
     'f_방': p.방,
