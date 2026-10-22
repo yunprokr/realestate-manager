@@ -1360,6 +1360,7 @@ function renderTypeSpecificFields(type) {
     ];
    } else if (type === '상가') {
     fields = [
+      { id: 'f_대지', label: '대지 (㎡)', type: 'number' },
       { id: 'f_연면적', label: '연면적 (㎡)', type: 'number' },
       { id: 'f_전용', label: '전용 (㎡)', type: 'number' },
       { id: 'f_건물명', label: '건물명', type: 'text', placeholder: '예: 드림타워' },
